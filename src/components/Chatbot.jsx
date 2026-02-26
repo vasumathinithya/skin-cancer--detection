@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { MessageCircle, X, Send, User, Bot, Loader } from 'lucide-react';
+import { getStoredKey, setStoredKey } from '../utils/gemini';
 
 const QA_DATABASE = {
     // Basic Greetings
@@ -29,7 +30,7 @@ const Chatbot = () => {
     ]);
     const [input, setInput] = useState('');
     const [isTyping, setIsTyping] = useState(false);
-    const [apiKey, setApiKey] = useState(localStorage.getItem('gemini_api_key') || 'AIzaSyA666C_F1zFEf9cFyy9tW2Yt8WVFg1WXLY');
+    const [apiKey, setApiKey] = useState(getStoredKey());
     const [showKeyInput, setShowKeyInput] = useState(!apiKey);
     const messagesEndRef = useRef(null);
 
@@ -41,8 +42,15 @@ const Chatbot = () => {
         scrollToBottom();
     }, [messages, isOpen]);
 
+    // Listen for storage changes to sync key if updated in Detector
+    useEffect(() => {
+        const handleStorage = () => setApiKey(getStoredKey());
+        window.addEventListener('storage', handleStorage);
+        return () => window.removeEventListener('storage', handleStorage);
+    }, []);
+
     const saveApiKey = (key) => {
-        localStorage.setItem('gemini_api_key', key);
+        setStoredKey(key);
         setApiKey(key);
         setShowKeyInput(false);
         setMessages(prev => [...prev, { type: 'bot', text: "Great! GenAI is now enabled. Ask me anything!" }]);
@@ -75,7 +83,7 @@ const Chatbot = () => {
             console.warn("Gemini 1.5 Flash failed, trying Pro...", error);
             try {
                 // Fallback to gemini-pro (older stable free tier)
-                return await tryModel('gemini-pro');
+                return await tryModel('gemini-1.5-pro');
             } catch (fallbackError) {
                 console.error("All Gemini models failed:", fallbackError);
                 return `AI Error: ${fallbackError.message}. Please check your API Key.`;
@@ -120,7 +128,7 @@ const Chatbot = () => {
         <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
             {/* Chat Window */}
             {isOpen && (
-                <div className="bg-white rounded-2xl shadow-2xl w-80 sm:w-96 mb-4 border border-slate-200 overflow-hidden animate-fade-in flex flex-col h-[500px] relative">
+                <div className="glass-card w-80 sm:w-96 mb-4 border border-slate-200 overflow-hidden animate-fade-in flex flex-col h-[500px] relative">
                     {/* Doctor Background Image with Overlay */}
                     <div className="absolute inset-0 z-0 pointer-events-none">
                         <img
@@ -200,8 +208,8 @@ const Chatbot = () => {
                                 </div>
                                 <div
                                     className={`max-w-[80%] p-3 rounded-2xl text-sm leading-relaxed shadow-sm backdrop-blur-sm ${msg.type === 'user'
-                                            ? 'bg-blue-600 text-white rounded-tr-none'
-                                            : 'bg-white/95 text-slate-800 border border-slate-200/50 rounded-tl-none'
+                                        ? 'bg-blue-600 text-white rounded-tr-none'
+                                        : 'bg-white/95 text-slate-800 border border-slate-200/50 rounded-tl-none'
                                         }`}
                                 >
                                     <div dangerouslySetInnerHTML={{ __html: msg.text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br />') }} />

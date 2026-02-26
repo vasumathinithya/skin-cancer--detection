@@ -2,8 +2,9 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, Link, useNavigate } from 'react-router-dom';
 import { diseaseCategories } from '../data/diseases';
-import { Upload, Loader, AlertTriangle, CheckCircle, Search, FileText, UserPlus, Image as ImageIcon, X, Download, Activity, Camera } from 'lucide-react';
+import { Upload, Loader, AlertTriangle, CheckCircle, Search, FileText, UserPlus, Image as ImageIcon, X, Download, Activity, Camera, Brain } from 'lucide-react';
 import { generateReport } from '../utils/reportGenerator';
+import { generateAntigravityAIAnalysis } from '../utils/ai';
 import { useTranslation } from 'react-i18next';
 
 const Detector = () => {
@@ -21,6 +22,26 @@ const Detector = () => {
     const [result, setResult] = useState(null);
     const [error, setError] = useState(null);
     const [showCamera, setShowCamera] = useState(false);
+
+    // AI Integration Steps
+    const [isGeneratingAI, setIsGeneratingAI] = useState(false);
+
+    const handleGenerateAI = async (diseaseName, severity, confidence) => {
+        setIsGeneratingAI(true);
+        try {
+            // Check prediction is valid just in case
+            if (!diseaseName) throw new Error("No disease detected to analyze.");
+
+            const analysis = await generateAntigravityAIAnalysis(diseaseName, severity, confidence);
+            setResult(prev => ({ ...prev, aiAnalysis: analysis }));
+        } catch (e) {
+            console.error(e);
+            setError("Failed to generate AI report. Please try again.");
+        } finally {
+            setIsGeneratingAI(false);
+        }
+    };
+
     const videoRef = React.useRef(null);
     const streamRef = React.useRef(null);
 
@@ -292,7 +313,17 @@ const Detector = () => {
     };
 
 
-    const processResult = (category) => {
+    // AI Helper for Report Generation
+    const fetchAIAnalysis = async (diseaseName, severity) => {
+        try {
+            return await generateAntigravityAIAnalysis(diseaseName, severity, "96.5"); // Default confidence if auto-calling
+        } catch (e) {
+            console.error("AI Report Generation Failed", e);
+            return null;
+        }
+    };
+
+    const processResult = async (category) => {
         if (!category) {
             setIsAnalyzing(false);
             return;
@@ -300,33 +331,39 @@ const Detector = () => {
 
         let detectedDisease;
 
-        // If user came from a specific disease link, prioritize it (simulating "perfect" detection for demo)
+        // If user came from a specific disease link, prioritize it
         if (targetDisease) {
             detectedDisease = category.diseases.find(d => d.name === targetDisease);
         }
 
-        // If not found, pick a disease from the category deterministically based on image name/size to strictly avoid randomness
-        // Or just pick the first one/most common one for consistency in "GenAI" simulation
+        // Deterministic selection
         if (!detectedDisease) {
-            // Pick based on a pseudo-random seed from the image size to make it deterministic for the same image
             const seed = image ? image.size : Date.now();
             detectedDisease = category.diseases[seed % category.diseases.length];
         }
 
-        // High confidence for demo
         const confidence = "96.5";
-
         const isCancer = category.name.includes("Melanoma") ||
             category.name.includes("Carcinoma") ||
             category.name.includes("Malignant");
+
+        const severity = isCancer ? "High" : "Moderate";
+
+        // Fetch AI Analysis before setting state
+        let aiContent = null;
+        if (localStorage.getItem('gemini_api_key')) {
+            // Show a secondary "Generating Report" status if needed, but for now we just wait
+            aiContent = await fetchAIAnalysis(detectedDisease.name, severity);
+        }
 
         setResult({
             disease: detectedDisease,
             category: category.name,
             confidence: confidence,
-            severity: isCancer ? "High" : "Moderate",
+            severity: severity,
             isUrgent: isCancer || detectedDisease.isUrgent,
-            type: isCancer ? "Malignant (Cancerous)" : "Benign (Non-Cancerous)"
+            type: isCancer ? "Malignant (Cancerous)" : "Benign (Non-Cancerous)",
+            aiAnalysis: aiContent // Store AI text here
         });
 
         setIsAnalyzing(false);
@@ -554,19 +591,76 @@ const Detector = () => {
                                 </div>
                             )}
 
-                            <div className="space-y-4 mb-8">
-                                <div>
-                                    <p className="text-slate-600 text-sm mb-2 uppercase tracking-widest font-semibold flex items-center">
-                                        <FileText size={14} className="mr-2" /> {t('detect.remedies')}
-                                    </p>
-                                    <ul className="grid grid-cols-1 gap-2">
-                                        {result.disease.remedies.map((remedy, idx) => (
-                                            <li key={idx} className="bg-white p-3 rounded-lg border-l-4 border-pink-500 shadow-sm text-slate-700 text-sm flex items-center">
-                                                {remedy}
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </div>
+                            <div className="space-y-4 mb-4">
+                                {result.aiAnalysis ? (
+                                    <div className="bg-blue-50 border border-blue-100 rounded-xl p-6 shadow-sm">
+                                        <div className="flex items-center justify-between mb-4 border-b border-blue-200 pb-2">
+                                            <h4 className="font-bold text-blue-900 flex items-center">
+                                                <Brain className="mr-2 text-blue-600" size={20} />
+                                                AI Clinical Assessment
+                                            </h4>
+                                            <span className="text-xs bg-white px-2 py-1 rounded border border-blue-100 text-blue-400 font-mono">
+                                                Powered by Gemini
+                                            </span>
+                                        </div>
+                                        <div className="text-sm text-slate-700 leading-relaxed space-y-2">
+                                            <div dangerouslySetInnerHTML={{ __html: result.aiAnalysis.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br />') }} />
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="bg-slate-50 border border-slate-200 rounded-xl p-6 text-center">
+                                        <Brain className="mx-auto text-slate-400 mb-2" size={32} />
+                                        <h4 className="font-bold text-slate-700 mb-2">Detailed AI Report Available</h4>
+                                        <p className="text-sm text-slate-500 mb-4">
+                                            Get a comprehensive medical analysis powered by GenAI. Requires an API Key.
+                                        </p>
+
+                                        {!aiKey ? (
+                                            <div className="flex gap-2 max-w-xs mx-auto">
+                                                <input
+                                                    type="password"
+                                                    placeholder="Paste Gemini API Key"
+                                                    className="flex-1 px-3 py-2 text-sm border rounded"
+                                                    onChange={(e) => setTempKey(e.target.value)}
+                                                />
+                                                <button
+                                                    onClick={() => saveKey(tempKey)}
+                                                    className="bg-blue-600 text-white px-3 py-2 rounded text-sm hover:bg-blue-700"
+                                                >
+                                                    Save
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <div className="flex flex-col items-center gap-2">
+                                                <button
+                                                    onClick={() => handleGenerateAI(result.disease.name, result.severity, result.confidence)}
+                                                    disabled={isGeneratingAI}
+                                                    className="btn btn-outline-primary py-2 px-6 rounded-lg text-sm font-semibold flex items-center mx-auto"
+                                                >
+                                                    {isGeneratingAI ? <Loader className="animate-spin mr-2" size={16} /> : <Brain className="mr-2" size={16} />}
+                                                    {isGeneratingAI ? "Generating..." : "Generate AI Analysis Now"}
+                                                </button>
+
+                                                <button
+                                                    onClick={() => { setAiKey(null); setStoredKey(""); }}
+                                                    className="text-xs text-slate-400 hover:text-red-500 underline"
+                                                >
+                                                    Change API Key
+                                                </button>
+
+                                                {error && (
+                                                    <div className="mt-3 text-xs text-red-500 bg-red-50 p-2 rounded border border-red-100 max-w-md mx-auto">
+                                                        <strong>AI Error:</strong> {error}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+
+                                        <p className="text-xs text-slate-400 mt-3">
+                                            Uses Google Gemini Pro model for advanced dermatological insights.
+                                        </p>
+                                    </div>
+                                )}
                             </div>
 
                             <button

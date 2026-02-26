@@ -10,161 +10,306 @@ export const generateReport = (result, imagePreview, appointmentDetails = null) 
         const doc = new jsPDF();
         const pageWidth = doc.internal.pageSize.getWidth();
         const pageHeight = doc.internal.pageSize.getHeight();
+        const margin = 20;
 
-        // Header
-        doc.setFillColor(63, 81, 181); // Indigo color - similar to app theme
+        // --- COLORS & STYLES ---
+        const colors = {
+            primary: [30, 64, 175],     // Dark Blue (Header)
+            secondary: [59, 130, 246],  // Lighter Blue (Accents)
+            success: [22, 163, 74],     // Green
+            warning: [234, 88, 12],     // Orange
+            danger: [220, 38, 38],      // Red
+            text: [31, 41, 55],         // Dark Gray
+            lightText: [107, 114, 128], // Light Gray
+            bg: [243, 244, 246]         // Very Light Gray
+        };
+
+        // --- HEADER ---
+        doc.setFillColor(...colors.primary);
         doc.rect(0, 0, pageWidth, 40, 'F');
 
+        // Logo / Title area
         doc.setTextColor(255, 255, 255);
-        doc.setFontSize(22);
+        doc.setFontSize(24);
         doc.setFont('helvetica', 'bold');
-        doc.text("AI Skin Diagnostic Report", 20, 25);
+        doc.text("DermaAI", margin, 20);
 
-        // Date and Time
-        const now = new Date();
         doc.setFontSize(10);
         doc.setFont('helvetica', 'normal');
-        doc.text(`Generated on: ${now.toLocaleString()}`, pageWidth - 20, 25, { align: 'right' });
+        doc.text("Advanced Skin Diagnostic System", margin, 27);
 
-        // Patient Info
-        const patientName = appointmentDetails?.patientName || "Guest User";
-
-        doc.setTextColor(33, 33, 33);
-        doc.setFontSize(14);
-        doc.setFont('helvetica', 'bold');
-        doc.text("Patient Information", 20, 55);
+        // Right side header info
+        const now = new Date();
+        doc.setFontSize(9);
+        doc.text("REPORT ID", pageWidth - margin, 15, { align: 'right' });
         doc.setFontSize(11);
+        doc.setFont('helvetica', 'bold');
+        doc.text(`#${Math.floor(100000 + Math.random() * 900000)}`, pageWidth - margin, 20, { align: 'right' });
+
+        doc.setFontSize(9);
         doc.setFont('helvetica', 'normal');
-        doc.text(`Patient Name: ${patientName}`, 20, 65);
-        doc.text(`Patient ID: P-${Math.floor(1000 + Math.random() * 9000)}`, 120, 65);
-        doc.text(`Assessment Date: ${now.toLocaleDateString()}`, 20, 72);
+        doc.text(now.toLocaleDateString() + " " + now.toLocaleTimeString(), pageWidth - margin, 28, { align: 'right' });
 
-        // Appointment Details (if available)
+        // --- PATIENT INFO SECTION ---
+        let currentY = 55;
+
+        doc.setDrawColor(200, 200, 200);
+        doc.setLineWidth(0.5);
+        doc.line(margin, currentY, pageWidth - margin, currentY); // Top line
+
+        currentY += 10;
+
+        const patientName = appointmentDetails?.patientName || "Guest Patient";
+        const patientId = "P-" + Math.floor(1000 + Math.random() * 9000);
+
+        // Column 1
+        doc.setFontSize(10);
+        doc.setTextColor(...colors.lightText);
+        doc.text("PATIENT NAME", margin, currentY);
+
+        doc.setFontSize(12);
+        doc.setTextColor(...colors.text);
+        doc.setFont('helvetica', 'bold');
+        doc.text(patientName, margin, currentY + 7);
+
+        // Column 2
+        doc.setFontSize(10);
+        doc.setTextColor(...colors.lightText);
+        doc.setFont('helvetica', 'normal');
+        doc.text("PATIENT ID", margin + 60, currentY);
+
+        doc.setFontSize(12);
+        doc.setTextColor(...colors.text);
+        doc.setFont('helvetica', 'bold');
+        doc.text(patientId, margin + 60, currentY + 7);
+
+        // Column 3
+        doc.setFontSize(10);
+        doc.setTextColor(...colors.lightText);
+        doc.setFont('helvetica', 'normal');
+        doc.text("ASSESSMENT DATE", margin + 120, currentY);
+
+        doc.setFontSize(12);
+        doc.setTextColor(...colors.text);
+        doc.setFont('helvetica', 'bold');
+        doc.text(now.toLocaleDateString(), margin + 120, currentY + 7);
+
+        currentY += 20;
+
+        // --- APPOINTMENT DETAILS (If exists) ---
         if (appointmentDetails && appointmentDetails.doctor) {
-            doc.setFillColor(240, 253, 244); // Light green bg
-            doc.setDrawColor(22, 163, 74);
-            doc.rect(20, 80, pageWidth - 40, 25, 'FD'); // Filled and Draw border
+            // Background box
+            doc.setFillColor(240, 253, 244); // Light Green
+            doc.setDrawColor(...colors.success);
+            doc.roundedRect(margin, currentY, pageWidth - (margin * 2), 24, 2, 2, 'FD');
 
-            doc.setTextColor(22, 101, 52); // Green text
-            doc.setFontSize(12);
+            // Icon/Label
+            doc.setTextColor(...colors.success);
+            doc.setFontSize(10);
             doc.setFont('helvetica', 'bold');
-            doc.text("Confirmed Appointment Details", 25, 90);
+            doc.text("UPCOMING APPOINTMENT CONFIRMED", margin + 5, currentY + 8);
 
-            doc.setTextColor(33, 33, 33);
+            // Details Line
+            doc.setTextColor(...colors.text);
             doc.setFontSize(10);
             doc.setFont('helvetica', 'normal');
-            doc.text(`Doctor: ${appointmentDetails.doctor}`, 25, 98);
-            doc.text(`Date: ${appointmentDetails.date}`, 85, 98);
-            doc.text(`Time: ${appointmentDetails.time}`, 140, 98);
-            doc.text(`Location: ${appointmentDetails.location}`, 25, 103);
-        }
 
-        // Adjust content start position based on appointment block
-        let startY = (appointmentDetails && appointmentDetails.doctor) ? 115 : 85;
+            const doctorText = `Doctor: ${appointmentDetails.doctor}`;
+            const timeText = `When: ${appointmentDetails.date} at ${appointmentDetails.time}`;
+            const locText = `Location: ${appointmentDetails.location}`;
 
-        if (imagePreview) {
-            try {
-                // Add image - standard A4 width is ~210mm
-                // We'll place it on the left side
-                const imgWidth = 80;
-                const imgHeight = 60;
+            doc.text(doctorText, margin + 5, currentY + 16);
+            doc.text(timeText, margin + 70, currentY + 16);
 
-                doc.addImage(imagePreview, 'JPEG', 20, startY, imgWidth, imgHeight);
-
-                // Draw border around image
-                doc.setDrawColor(200, 200, 200);
-                doc.rect(20, startY, imgWidth, imgHeight);
-
+            // Location might be long
+            if (doc.getTextWidth(locText) > 80) {
                 doc.setFontSize(9);
-                doc.setTextColor(150, 150, 150);
-                doc.text("Scanned Image", 20, startY + imgHeight + 5);
-            } catch (e) {
-                console.error("Error adding image to PDF", e);
             }
+            doc.text(locText, margin + 130, currentY + 16);
+
+            currentY += 35;
+        } else {
+            currentY += 10;
         }
 
-        // Diagnosis Section (Right Side)
-        const col2X = 120;
+        // --- DIAGNOSIS & IMAGING SECTION ---
 
-        // Background box for diagnosis
-        doc.setFillColor(245, 247, 250);
-        doc.rect(col2X - 10, startY - 10, pageWidth - col2X - 10, 80, 'F');
-
-        doc.setFontSize(14);
-        doc.setTextColor(33, 33, 33);
+        // Section Title
+        doc.setFillColor(...colors.bg);
+        doc.rect(margin, currentY, pageWidth - (margin * 2), 8, 'F');
+        doc.setTextColor(...colors.primary);
+        doc.setFontSize(10);
         doc.setFont('helvetica', 'bold');
-        doc.text("Analysis Results", col2X, startY);
+        doc.text("CLINICAL ASSESSMENT & IMAGING", margin + 2, currentY + 5.5);
 
-        doc.setFontSize(11);
-        doc.setTextColor(100, 100, 100);
-        doc.setFont('helvetica', 'normal');
-        doc.text("Identified Condition:", col2X, startY + 15);
+        currentY += 15;
 
-        doc.setFontSize(16);
-        doc.setTextColor(236, 72, 153); // Pink-500 equivalent
+        // Left Column: Image
+        if (imagePreview) {
+            const imgWidth = 70;
+            const imgHeight = 55;
+
+            // Image Frame
+            doc.setDrawColor(220, 220, 220);
+            doc.setFillColor(255, 255, 255);
+            doc.rect(margin, currentY, imgWidth, imgHeight, 'FD');
+
+            try {
+                // Add margins inside the frame
+                doc.addImage(imagePreview, 'JPEG', margin + 2, currentY + 2, imgWidth - 4, imgHeight - 4, undefined, 'FAST');
+            } catch (e) {
+                console.error("Image add error", e);
+                doc.text("Image Error", margin + 10, currentY + 20);
+            }
+
+            doc.setFontSize(8);
+            doc.setTextColor(...colors.lightText);
+            doc.text("Captured Skin Sample", margin, currentY + imgHeight + 5);
+        }
+
+        // Right Column: Diagnosis Details
+        const col2X = margin + 80;
+
+        doc.setFontSize(10);
+        doc.setTextColor(...colors.lightText);
+        doc.text("PRIMARY CONDITION DETECTED", col2X, currentY + 5);
+
+        doc.setFontSize(18);
+        doc.setTextColor(220, 38, 38); // Red for condition urgency or just standard dark text
+        if (!result.isUrgent) doc.setTextColor(...colors.primary);
+
         doc.setFont('helvetica', 'bold');
-        doc.text(result.disease.name, col2X, startY + 25);
+        doc.text(result.disease.name, col2X, currentY + 14);
 
-        doc.setFontSize(11);
-        doc.setTextColor(100, 100, 100);
+        // Tags Line
+        const categoryText = `Category: ${result.category}`;
+        doc.setFontSize(10);
+        doc.setTextColor(...colors.text);
         doc.setFont('helvetica', 'normal');
-        doc.text("Category:", col2X, startY + 40);
-        doc.setTextColor(0, 0, 0);
-        doc.text(result.category, col2X, startY + 48);
+        doc.text(categoryText, col2X, currentY + 24);
 
-        doc.setTextColor(100, 100, 100);
-        doc.text("Confidence:", col2X, startY + 60);
-        doc.setTextColor(0, 0, 0);
-        doc.text(`${result.confidence}% Match`, col2X, startY + 68);
+        // Severity Badge
+        const severityY = currentY + 32;
+        const severityText = result.isUrgent ? "URGENT ATTENTION REQUIRED" : "Moderate Severity Pattern";
+        const severityColor = result.isUrgent ? colors.danger : colors.success;
 
-        // Status Indicator
-        if (result.isUrgent) {
-            doc.setTextColor(220, 38, 38); // Red
+        doc.setFillColor(...severityColor);
+        doc.roundedRect(col2X, severityY, doc.getTextWidth(severityText) + 6, 7, 1, 1, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'bold');
+        doc.text(severityText, col2X + 3, severityY + 4.5);
+
+        // Confidence Meter
+        const confidenceY = severityY + 12;
+        doc.setTextColor(...colors.lightText);
+        doc.setFont('helvetica', 'normal');
+        doc.text("AI Confidence Level", col2X, confidenceY);
+
+        const meterWidth = 60;
+        const meterHeight = 4;
+        const meterY = confidenceY + 3;
+
+        // Background track
+        doc.setFillColor(229, 231, 235);
+        doc.roundedRect(col2X, meterY, meterWidth, meterHeight, 1, 1, 'F');
+
+        // Progress fill
+        const fillWidth = (result.confidence / 100) * meterWidth;
+        doc.setFillColor(...colors.primary);
+        doc.roundedRect(col2X, meterY, fillWidth, meterHeight, 1, 1, 'F');
+
+        doc.setFontSize(9);
+        doc.setTextColor(...colors.text);
+        doc.text(`${result.confidence}%`, col2X + meterWidth + 5, meterY + 3);
+
+        currentY += 75; // Move past image/diagnosis section
+
+        // --- ANALYSIS / REMEDIES ---
+
+        // AI Analysis Text
+        if (result.aiAnalysis) {
+            doc.setFillColor(240, 248, 255); // AliceBlue
+            doc.rect(margin, currentY, pageWidth - (margin * 2), 10, 'F');
+            doc.setFontSize(11);
+            doc.setTextColor(0, 51, 102);
             doc.setFont('helvetica', 'bold');
-            doc.text("(!) URGENT ATTENTION", col2X, startY - 15); // Above the box maybe? Or inside
-        } else {
-            doc.setTextColor(22, 163, 74); // Green
-            doc.setFont('helvetica', 'bold');
-            doc.text("Moderate Severity", col2X, startY - 15);
+            doc.text("AI DETECTED CLINICAL INSIGHTS", margin + 3, currentY + 7);
+
+            currentY += 15;
+
+            doc.setFontSize(10);
+            doc.setTextColor(55, 65, 81);
+            doc.setFont('helvetica', 'normal');
+
+            // Clean markdown
+            const cleanText = result.aiAnalysis.replace(/\*\*/g, "").replace(/#/g, "").replace(/\n\n/g, "\n");
+            const splitLines = doc.splitTextToSize(cleanText, pageWidth - (margin * 2));
+
+            doc.text(splitLines, margin, currentY);
+            currentY += (splitLines.length * 5) + 10;
         }
 
         // Remedies Table
-        const tableStartY = startY + 90;
+        const remedies = result.disease.remedies || [];
+        if (remedies.length > 0) {
+            // Check if we need a new page
+            if (currentY > pageHeight - 60) {
+                doc.addPage();
+                currentY = 20;
+            }
 
-        const remediesData = result.disease.remedies.map(r => [r]);
+            autoTable(doc, {
+                startY: currentY,
+                head: [['RECOMMENDED REMEDIES & ACTIONS']],
+                body: remedies.map(r => [r]),
+                theme: 'striped',
+                headStyles: {
+                    fillColor: colors.primary,
+                    textColor: 255,
+                    fontStyle: 'bold',
+                    fontSize: 10,
+                    halign: 'left'
+                },
+                styles: {
+                    fontSize: 10,
+                    cellPadding: 6,
+                    textColor: colors.text
+                },
+                alternateRowStyles: {
+                    fillColor: [249, 250, 251]
+                },
+                margin: { left: margin, right: margin }
+            });
 
-        autoTable(doc, {
-            startY: tableStartY,
-            head: [['Recommended Actions & Remedies']],
-            body: remediesData,
-            theme: 'grid',
-            headStyles: { fillColor: [236, 72, 153], textColor: 255, halign: 'left' },
-            styles: { fontSize: 11, cellPadding: 5 },
-            margin: { left: 20, right: 20 }
-        });
+            currentY = doc.lastAutoTable.finalY + 20;
+        }
 
-        // Footer / Disclaimer
-        const disclaimerText = "DISCLAIMER: This report is generated by an AI model and is for informational purposes only. It is NOT a substitute for professional medical advice, diagnosis, or treatment. Always seek the advice of your physician or other qualified health provider with any questions you may have regarding a medical condition.";
+        // --- FOOTER ---
+        const footerY = pageHeight - 25;
 
-        // Safe access to lastAutoTable
-        const lastY = doc.lastAutoTable ? doc.lastAutoTable.finalY : tableStartY + 50;
-        const finalY = lastY + 20;
+        doc.setDrawColor(200, 200, 200);
+        doc.line(margin, footerY, pageWidth - margin, footerY);
 
         doc.setFontSize(8);
-        doc.setTextColor(128, 128, 128);
+        doc.setTextColor(156, 163, 175);
         doc.setFont('helvetica', 'italic');
 
-        // Split text to fit
-        const splitText = doc.splitTextToSize(disclaimerText, pageWidth - 40);
-        doc.text(splitText, 20, Math.min(finalY, pageHeight - 15));
+        const disclaimer = "DISCLAIMER: This report is generated by an AI model for informational purposes only. It is NOT a substitute for professional medical advice, diagnosis, or treatment.";
+        const splitDisclaimer = doc.splitTextToSize(disclaimer, pageWidth - (margin * 2));
+
+        doc.text(splitDisclaimer, margin, footerY + 8);
+
+        doc.setFont('helvetica', 'bold');
+        doc.text("DermaAI Confidential", pageWidth - margin, footerY + 8, { align: 'right' });
+
 
         // Save
-        const filename = `Skin_Diagnosis_Report_${new Date().getTime()}.pdf`;
+        const filename = `DermaAI_Report_${new Date().getTime()}.pdf`;
         doc.save(filename);
-        console.log("PDF Saved as:", filename);
 
     } catch (error) {
         console.error("Report Generation Failed:", error);
-        alert("Failed to generate report. Please try again.\n\nError details: " + error.message);
+        alert("Failed to generate report. \n" + error.message);
     }
 };

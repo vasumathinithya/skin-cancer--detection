@@ -18,8 +18,12 @@ const Appointment = () => {
     const [bookingSuccess, setBookingSuccess] = useState(false);
     const [formData, setFormData] = useState({ name: '', phone: '', date: '', time: '' });
 
+    // Parse query params for initial search
+    const queryParams = new URLSearchParams(location.search);
+    const initialSearch = queryParams.get('q') || '';
+
     // Search and Location State
-    const [searchQuery, setSearchQuery] = useState('');
+    const [searchQuery, setSearchQuery] = useState(initialSearch);
     const [userLocation, setUserLocation] = useState('');
     const [isLocating, setIsLocating] = useState(false);
 
@@ -77,13 +81,42 @@ const Appointment = () => {
         setUserLocation('');
     };
 
-    const handleBook = (e) => {
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const handleBook = async (e) => {
         e.preventDefault();
-        // Simulate API call
-        setTimeout(() => {
-            setBookingSuccess(true);
-            // Auto-close removed to allow report download
-        }, 1000);
+        setIsSubmitting(true);
+
+        // Dynamically determine backend URL based on where the frontend is loaded from
+        // This allows it to work on localhost, 127.0.0.1, network IP, or production
+        const API_BASE = import.meta.env.VITE_API_BASE_URL || `http://${window.location.hostname}:5000`;
+
+        try {
+            const response = await fetch(`${API_BASE}/api/appointments`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    patientName: formData.name,
+                    patientEmail: formData.phone, // Saving phone in email field for now to match DB schema
+                    doctorName: selectedDoctor.name,
+                    date: formData.date,
+                    time: formData.time,
+                    location: selectedDoctor.location
+                })
+            });
+
+            if (response.ok) {
+                setBookingSuccess(true);
+            } else {
+                const errData = await response.json();
+                alert("Booking failed: " + (errData.error || "Unknown error"));
+            }
+        } catch (error) {
+            console.error("Booking Error:", error);
+            alert(`Connection Failed! Ensure the Python Backend is running on ${API_BASE}`);
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     return (
@@ -330,8 +363,15 @@ const Appointment = () => {
                                     </div>
                                 </div>
 
-                                <button type="submit" className="btn btn-primary w-full mt-4">
-                                    {t('app.confirm')}
+                                <button type="submit" disabled={isSubmitting} className="btn btn-primary w-full mt-4 flex justify-center items-center">
+                                    {isSubmitting ? (
+                                        <>
+                                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                            Booking...
+                                        </>
+                                    ) : (
+                                        t('app.confirm')
+                                    )}
                                 </button>
                             </form>
                         )}
