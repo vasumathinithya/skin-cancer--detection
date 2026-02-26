@@ -2,7 +2,7 @@
 import React from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { diseaseCategories } from '../data/diseases';
-import { Camera, ChevronLeft, ArrowRight } from 'lucide-react';
+import { Camera, ChevronLeft, ArrowRight, Stethoscope } from 'lucide-react';
 
 const CategorizedDiseases = () => {
     const { id } = useParams();
@@ -35,6 +35,14 @@ const CategorizedDiseases = () => {
                 >
                     <Camera className="mr-2" />
                     Detect Issues Now
+                </Link>
+
+                <Link
+                    to={`/appointments?q=${encodeURIComponent(category.name)}`}
+                    className="btn bg-white text-blue-600 border border-blue-200 px-8 py-5 text-lg shadow-lg hover:bg-blue-50 transform hover:-translate-y-1 transition-all flex-shrink-0 flex items-center"
+                >
+                    <Stethoscope className="mr-2" size={20} />
+                    Find Specialists
                 </Link>
             </div>
 
@@ -83,6 +91,14 @@ const CategorizedDiseases = () => {
                                     className="text-white bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg text-sm font-bold flex items-center shadow-lg shadow-blue-500/10 transition-colors"
                                 >
                                     Check Now <ArrowRight size={14} className="ml-1" />
+                                </Link>
+
+                                <Link
+                                    to={`/appointments?q=${encodeURIComponent(disease.name)}`}
+                                    className="text-blue-600 hover:text-blue-800 p-2 rounded-lg text-sm font-bold flex items-center transition-colors"
+                                    title="Book Appointment"
+                                >
+                                    <Stethoscope size={18} />
                                 </Link>
                             </div>
                         </div>

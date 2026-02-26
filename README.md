@@ -1,16 +1,55 @@
-# React + Vite
+# Skin Cancer Detection App
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+An AI-powered web application for detecting skin diseases and connecting with dermatologists.
 
-Currently, two official plugins are available:
+## Project Structure
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **Frontend**: React + Vite (in root directory)
+- **Backend**: Python Flask (in `backend_py` directory)
 
-## React Compiler
+## Prerequisites
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- Node.js & npm
+- Python 3.x
 
-## Expanding the ESLint configuration
+## How to Run locally
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+### 1. Start the Backend Server (Termimal 1)
+
+The backend handles appointments and data storage using SQLite.
+
+```bash
+# Navigate to backend directory
+cd backend_py
+
+# Install Python dependencies (only first time)
+pip install -r requirements.txt
+
+# Run the Flask server
+python app.py
+```
+
+The backend will start at `http://localhost:5000`.
+
+### 2. Start the Frontend Application (Terminal 2)
+
+The frontend provides the user interface.
+
+```bash
+# In the root project directory
+
+# Install Node dependencies (only first time)
+npm install
+
+# Start the development server
+npm run dev
+```
+
+The application will be available at **`http://localhost:5173`**.
+
+## Features
+
+- **AI Detection**: Upload or capture images to detect skin conditions.
+- **Categorized Diseases**: Browse skin conditions by category.
+- **Doctor Appointments**: Find and book appointments with specialists.
+- **Medical Reports**: Generate PDF reports for your consultation.
