@@ -28,6 +28,19 @@ def init_db():
 # Initialize DB on start
 init_db()
 
+@app.route('/', methods=['GET'])
+def index():
+    return jsonify({
+        "status": "✅ online",
+        "app": "Skin Cancer Detection Backend",
+        "version": "1.0.0",
+        "endpoints": {
+            "health": "/api/health",
+            "get_appointments": "GET /api/appointments",
+            "create_appointment": "POST /api/appointments"
+        }
+    })
+
 @app.route('/api/health', methods=['GET'])
 def health_check():
     return jsonify({"status": "ok", "message": "Python Backend (SQLite) is running!"})
