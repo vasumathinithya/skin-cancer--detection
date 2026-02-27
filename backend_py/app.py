@@ -2,18 +2,20 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 from dotenv import load_dotenv
 import os
-import pymongo
-from pymongo import MongoClient
+import sqlite3
 
 load_dotenv()
 
 app = Flask(__name__)
-CORS(app)
 
-import sqlite3
+# Allow all origins in production (Vercel frontend + any device)
+CORS(app, origins="*")
+
+# Use /tmp for SQLite on cloud hosts (Render, Railway etc.)
+DB_PATH = os.path.join('/tmp', 'skin_cancer.db') if os.environ.get('RENDER') else 'skin_cancer.db'
 
 def init_db():
-    conn = sqlite3.connect('skin_cancer.db')
+    conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     c.execute('''CREATE TABLE IF NOT EXISTS appointments
                  (id INTEGER PRIMARY KEY AUTOINCREMENT, 
@@ -32,14 +34,12 @@ def health_check():
 
 @app.route('/api/appointments', methods=['GET'])
 def get_appointments():
-    conn = sqlite3.connect('skin_cancer.db')
-    conn.row_factory = sqlite3.Row # Return rows as dictionaries
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
     c = conn.cursor()
     c.execute("SELECT * FROM appointments")
     rows = c.fetchall()
     conn.close()
-    
-    # Convert Row objects to list of dicts
     appointments = [dict(row) for row in rows]
     return jsonify(appointments)
 
@@ -47,18 +47,19 @@ def get_appointments():
 def create_appointment():
     data = request.json
     try:
-        conn = sqlite3.connect('skin_cancer.db')
+        conn = sqlite3.connect(DB_PATH)
         c = conn.cursor()
-        c.execute("INSERT INTO appointments (patientName, patientEmail, doctorName, date, time, location, status) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                  (data.get("patientName"), data.get("patientEmail"), data.get("doctorName"), 
-                   data.get("date"), data.get("time"), data.get("location"), "Pending"))
+        c.execute(
+            "INSERT INTO appointments (patientName, patientEmail, doctorName, date, time, location, status) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (data.get("patientName"), data.get("patientEmail"), data.get("doctorName"),
+             data.get("date"), data.get("time"), data.get("location"), "Pending")
+        )
         conn.commit()
         conn.close()
-        
-        return jsonify({"message": "Appointment Creates Success", "data": data}), 201
+        return jsonify({"message": "Appointment Created Successfully", "data": data}), 201
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
     port = int(os.getenv("PORT", 5000))
-    app.run(debug=True, port=port, host='0.0.0.0')
+    app.run(debug=False, port=port, host='0.0.0.0')
