@@ -25,6 +25,13 @@ const Detector = () => {
 
     // AI Integration Steps
     const [isGeneratingAI, setIsGeneratingAI] = useState(false);
+    const [aiKey, setAiKey] = useState(localStorage.getItem('gemini_api_key') || '');
+    const [tempKey, setTempKey] = useState('');
+
+    const saveKey = (key) => {
+        localStorage.setItem('gemini_api_key', key);
+        setAiKey(key);
+    };
 
     const handleGenerateAI = async (diseaseName, severity, confidence) => {
         setIsGeneratingAI(true);
