@@ -373,12 +373,14 @@ const Detector = () => {
             aiAnalysis: aiContent
         });
 
-        // Save real scan data to backend
+        setIsAnalyzing(false); // Stop loading spinner immediately
+
+        // Save real scan data to backend (fire-and-forget so UI never hangs)
         try {
             const storedUser = localStorage.getItem('user');
             const user = storedUser ? JSON.parse(storedUser) : { name: 'Guest', email: 'anonymous' };
             const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:5000';
-            await fetch(`${API_BASE}/api/scans`, {
+            fetch(`${API_BASE}/api/scans`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -390,12 +392,10 @@ const Detector = () => {
                     confidence: confidence,
                     scan_type: 'upload',
                 }),
-            });
+            }).catch(e => console.warn('Could not save scan to backend:', e));
         } catch (e) {
-            console.warn('Could not save scan to backend:', e);
+            console.warn('Setup error for analytics:', e);
         }
-
-        setIsAnalyzing(false);
     };
 
     const startCamera = async () => {
