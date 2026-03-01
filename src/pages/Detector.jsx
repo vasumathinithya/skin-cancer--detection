@@ -35,6 +35,10 @@ const Detector = () => {
             setResult(prev => ({ ...prev, aiAnalysis: analysis }));
         } catch (e) {
             console.error("AI Report block:", e);
+            setResult(prev => ({
+                ...prev,
+                aiAnalysis: `**AI Generation Failed:**\n\n${e.message}\n\n*Note: If your API key was reported as leaked, Google permanently disables it. Please generate a new key from Google AI Studio and update the code.*`
+            }));
         } finally {
             setIsGeneratingAI(false);
         }
