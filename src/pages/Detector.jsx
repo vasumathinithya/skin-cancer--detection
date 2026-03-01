@@ -363,8 +363,30 @@ const Detector = () => {
             severity: severity,
             isUrgent: isCancer || detectedDisease.isUrgent,
             type: isCancer ? "Malignant (Cancerous)" : "Benign (Non-Cancerous)",
-            aiAnalysis: aiContent // Store AI text here
+            aiAnalysis: aiContent
         });
+
+        // Save real scan data to backend
+        try {
+            const storedUser = localStorage.getItem('user');
+            const user = storedUser ? JSON.parse(storedUser) : { name: 'Guest', email: 'anonymous' };
+            const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:5000';
+            await fetch(`${API_BASE}/api/scans`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    user_email: user.email,
+                    user_name: user.name,
+                    disease_name: detectedDisease.name,
+                    category: category.name,
+                    severity: severity,
+                    confidence: confidence,
+                    scan_type: 'upload',
+                }),
+            });
+        } catch (e) {
+            console.warn('Could not save scan to backend:', e);
+        }
 
         setIsAnalyzing(false);
     };
