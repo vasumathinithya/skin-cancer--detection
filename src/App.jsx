@@ -9,6 +9,7 @@ import Categories from './pages/Categories';
 import CategorizedDiseases from './pages/CategorizedDiseases';
 import Detector from './pages/Detector';
 import Appointment from './pages/Appointment';
+import AdminDashboard from './pages/AdminDashboard';
 import Chatbot from './components/Chatbot';
 
 function App() {
@@ -25,6 +26,7 @@ function App() {
             <Route path="/category/:id" element={<CategorizedDiseases />} />
             <Route path="/detect" element={<Detector />} />
             <Route path="/appointments" element={<Appointment />} />
+            <Route path="/admin" element={<AdminDashboard />} />
           </Routes>
         </main>
         <footer className="glass py-4 text-center mt-auto">

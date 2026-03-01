@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Brain, Menu, X, User, Activity, Globe } from 'lucide-react';
+import { Brain, Menu, X, User, Activity, Globe, LayoutDashboard } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 const Navbar = () => {
@@ -18,6 +18,7 @@ const Navbar = () => {
         { name: "Categories", path: '/categories' },
         { name: "AI Detector", path: '/detect' },
         { name: "Find Doctors", path: '/appointments' },
+        { name: "Admin", path: '/admin', icon: LayoutDashboard },
     ];
 
     const user = localStorage.getItem('user');
@@ -42,8 +43,8 @@ const Navbar = () => {
                             key={link.path}
                             to={link.path}
                             className={`text-sm font-semibold transition-colors duration-300 relative py-1 ${location.pathname === link.path
-                                    ? 'text-blue-600'
-                                    : 'text-slate-600 hover:text-blue-600'
+                                ? 'text-blue-600'
+                                : 'text-slate-600 hover:text-blue-600'
                                 }`}
                         >
                             {link.name}
@@ -109,8 +110,8 @@ const Navbar = () => {
                             to={link.path}
                             onClick={() => setIsOpen(false)}
                             className={`text-lg font-medium p-3 rounded-xl transition-colors ${location.pathname === link.path
-                                    ? 'bg-blue-50 text-blue-600'
-                                    : 'text-slate-600 hover:bg-slate-50'
+                                ? 'bg-blue-50 text-blue-600'
+                                : 'text-slate-600 hover:bg-slate-50'
                                 }`}
                         >
                             {link.name}

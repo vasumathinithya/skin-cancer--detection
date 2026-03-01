@@ -6,15 +6,33 @@ import { Mail, Lock, LogIn } from 'lucide-react';
 const Login = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
 
-    const handleLogin = (e) => {
+    const handleLogin = async (e) => {
         e.preventDefault();
-        if (email && password) {
-            // Mock login
-            localStorage.setItem('user', JSON.stringify({ name: 'Demo User', email }));
+        setError('');
+        setLoading(true);
+        try {
+            const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:5000';
+            const res = await fetch(`${API_BASE}/api/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password }),
+            });
+            const data = await res.json();
+            if (!res.ok) {
+                setError(data.error || 'Login failed');
+                setLoading(false);
+                return;
+            }
+            localStorage.setItem('user', JSON.stringify(data.user));
             navigate('/');
-            window.location.reload(); // To update Navbar state
+            window.location.reload();
+        } catch (err) {
+            setError('Cannot connect to server. Make sure the backend is running.');
+            setLoading(false);
         }
     };
 
@@ -34,14 +52,8 @@ const Login = () => {
                         <label className="text-slate-300 mb-2 block font-medium">Email Address</label>
                         <div className="relative">
                             <Mail size={20} className="absolute left-3 top-3.5 text-slate-500" />
-                            <input
-                                type="email"
-                                required
-                                className="pl-10 w-full"
-                                placeholder="name@example.com"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                            />
+                            <input type="email" required className="pl-10 w-full" placeholder="name@example.com"
+                                value={email} onChange={(e) => setEmail(e.target.value)} />
                         </div>
                     </div>
 
@@ -52,19 +64,20 @@ const Login = () => {
                         </div>
                         <div className="relative">
                             <Lock size={20} className="absolute left-3 top-3.5 text-slate-500" />
-                            <input
-                                type="password"
-                                required
-                                className="pl-10 w-full"
-                                placeholder="••••••••"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                            />
+                            <input type="password" required className="pl-10 w-full" placeholder="••••••••"
+                                value={password} onChange={(e) => setPassword(e.target.value)} />
                         </div>
                     </div>
 
-                    <button type="submit" className="btn btn-primary w-full py-3 text-lg shadow-lg hover:shadow-pink-500/40">
-                        Sign In
+                    {error && (
+                        <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 rounded-xl text-sm">
+                            {error}
+                        </div>
+                    )}
+
+                    <button type="submit" disabled={loading}
+                        className="btn btn-primary w-full py-3 text-lg shadow-lg hover:shadow-pink-500/40">
+                        {loading ? 'Signing In...' : 'Sign In'}
                     </button>
                 </form>
 
