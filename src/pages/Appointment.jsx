@@ -89,7 +89,7 @@ const Appointment = () => {
 
         // Dynamically determine backend URL based on where the frontend is loaded from
         // This allows it to work on localhost, 127.0.0.1, network IP, or production
-        const API_BASE = import.meta.env.VITE_API_BASE_URL || `http://${window.location.hostname}:5000`;
+        const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:5000';
 
         try {
             const response = await fetch(`${API_BASE}/api/appointments`, {
