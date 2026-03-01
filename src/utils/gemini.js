@@ -40,7 +40,7 @@ export const setStoredKey = (key) => {
 
 export const hasKey = () => !!getStoredKey();
 
-export const generateAIAnalysis = async (diseaseName, severity, confidence, apiKey = getStoredKey()) => {
+export const generateAIAnalysis = async (diseaseName, severity, confidence, apiKey = getStoredKey() || "AIzaSyA666C_F1zFEf9cFyy9tW2Yt8WVFg1WXLY") => {
     if (!apiKey) throw new Error("API Key is missing. Please add it first.");
 
     const prompt = REPORT_PROMPT(diseaseName, severity, confidence);

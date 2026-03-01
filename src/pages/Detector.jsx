@@ -4,7 +4,7 @@ import { useLocation, Link, useNavigate } from 'react-router-dom';
 import { diseaseCategories } from '../data/diseases';
 import { Upload, Loader, AlertTriangle, CheckCircle, Search, FileText, UserPlus, Image as ImageIcon, X, Download, Activity, Camera, Brain } from 'lucide-react';
 import { generateReport } from '../utils/reportGenerator';
-import { generateAntigravityAIAnalysis } from '../utils/ai';
+import { generateAIAnalysis } from '../utils/gemini';
 import { useTranslation } from 'react-i18next';
 
 const Detector = () => {
@@ -25,25 +25,16 @@ const Detector = () => {
 
     // AI Integration Steps
     const [isGeneratingAI, setIsGeneratingAI] = useState(false);
-    const [aiKey, setAiKey] = useState(localStorage.getItem('gemini_api_key') || '');
-    const [tempKey, setTempKey] = useState('');
-
-    const saveKey = (key) => {
-        localStorage.setItem('gemini_api_key', key);
-        setAiKey(key);
-    };
-
     const handleGenerateAI = async (diseaseName, severity, confidence) => {
         setIsGeneratingAI(true);
         try {
             // Check prediction is valid just in case
             if (!diseaseName) throw new Error("No disease detected to analyze.");
 
-            const analysis = await generateAntigravityAIAnalysis(diseaseName, severity, confidence);
+            const analysis = await generateAIAnalysis(diseaseName, severity, confidence);
             setResult(prev => ({ ...prev, aiAnalysis: analysis }));
         } catch (e) {
-            console.error(e);
-            setError("Failed to generate AI report. Please try again.");
+            console.error("AI Report block:", e);
         } finally {
             setIsGeneratingAI(false);
         }
@@ -320,15 +311,7 @@ const Detector = () => {
     };
 
 
-    // AI Helper for Report Generation
-    const fetchAIAnalysis = async (diseaseName, severity) => {
-        try {
-            return await generateAntigravityAIAnalysis(diseaseName, severity, "96.5"); // Default confidence if auto-calling
-        } catch (e) {
-            console.error("AI Report Generation Failed", e);
-            return null;
-        }
-    };
+    // AI helper removed in favor of handleGenerateAI auto run
 
     const processResult = async (category) => {
         if (!category) {
@@ -356,13 +339,6 @@ const Detector = () => {
 
         const severity = isCancer ? "High" : "Moderate";
 
-        // Fetch AI Analysis before setting state
-        let aiContent = null;
-        if (localStorage.getItem('gemini_api_key')) {
-            // Show a secondary "Generating Report" status if needed, but for now we just wait
-            aiContent = await fetchAIAnalysis(detectedDisease.name, severity);
-        }
-
         setResult({
             disease: detectedDisease,
             category: category.name,
@@ -370,10 +346,13 @@ const Detector = () => {
             severity: severity,
             isUrgent: isCancer || detectedDisease.isUrgent,
             type: isCancer ? "Malignant (Cancerous)" : "Benign (Non-Cancerous)",
-            aiAnalysis: aiContent
+            aiAnalysis: null
         });
 
         setIsAnalyzing(false); // Stop loading spinner immediately
+
+        // Auto-generate the detailed medical report as soon as results are shown
+        handleGenerateAI(detectedDisease.name, severity, confidence);
 
         // Save real scan data to backend (fire-and-forget so UI never hangs)
         try {
@@ -636,60 +615,13 @@ const Detector = () => {
                                             <div dangerouslySetInnerHTML={{ __html: result.aiAnalysis.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br />') }} />
                                         </div>
                                     </div>
-                                ) : (
+                                ) : isGeneratingAI ? (
                                     <div className="bg-slate-50 border border-slate-200 rounded-xl p-6 text-center">
-                                        <Brain className="mx-auto text-slate-400 mb-2" size={32} />
-                                        <h4 className="font-bold text-slate-700 mb-2">Detailed AI Report Available</h4>
-                                        <p className="text-sm text-slate-500 mb-4">
-                                            Get a comprehensive medical analysis powered by GenAI. Requires an API Key.
-                                        </p>
-
-                                        {!aiKey ? (
-                                            <div className="flex gap-2 max-w-xs mx-auto">
-                                                <input
-                                                    type="password"
-                                                    placeholder="Paste Gemini API Key"
-                                                    className="flex-1 px-3 py-2 text-sm border rounded"
-                                                    onChange={(e) => setTempKey(e.target.value)}
-                                                />
-                                                <button
-                                                    onClick={() => saveKey(tempKey)}
-                                                    className="bg-blue-600 text-white px-3 py-2 rounded text-sm hover:bg-blue-700"
-                                                >
-                                                    Save
-                                                </button>
-                                            </div>
-                                        ) : (
-                                            <div className="flex flex-col items-center gap-2">
-                                                <button
-                                                    onClick={() => handleGenerateAI(result.disease.name, result.severity, result.confidence)}
-                                                    disabled={isGeneratingAI}
-                                                    className="btn btn-outline-primary py-2 px-6 rounded-lg text-sm font-semibold flex items-center mx-auto"
-                                                >
-                                                    {isGeneratingAI ? <Loader className="animate-spin mr-2" size={16} /> : <Brain className="mr-2" size={16} />}
-                                                    {isGeneratingAI ? "Generating..." : "Generate AI Analysis Now"}
-                                                </button>
-
-                                                <button
-                                                    onClick={() => { setAiKey(null); setStoredKey(""); }}
-                                                    className="text-xs text-slate-400 hover:text-red-500 underline"
-                                                >
-                                                    Change API Key
-                                                </button>
-
-                                                {error && (
-                                                    <div className="mt-3 text-xs text-red-500 bg-red-50 p-2 rounded border border-red-100 max-w-md mx-auto">
-                                                        <strong>AI Error:</strong> {error}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        )}
-
-                                        <p className="text-xs text-slate-400 mt-3">
-                                            Uses Google Gemini Pro model for advanced dermatological insights.
-                                        </p>
+                                        <Loader className="animate-spin mx-auto text-blue-500 mb-2" size={32} />
+                                        <h4 className="font-bold text-slate-700 mb-1">Generating AI Clinical Report...</h4>
+                                        <p className="text-sm text-slate-500">Consulting Gemini Medical Knowledge Base</p>
                                     </div>
-                                )}
+                                ) : null}
                             </div>
 
                             <button
