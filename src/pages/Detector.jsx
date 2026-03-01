@@ -583,7 +583,7 @@ const Detector = () => {
                         </div>
                     )}
 
-                    {isAnalyzing && (
+                    {isAnalyzing && !result && (
                         <div className="w-full flex flex-col items-center">
                             <div className="w-24 h-24 border-4 border-pink-500 border-t-transparent rounded-full animate-spin mb-6"></div>
                             <h3 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-pink-400 to-violet-400 animate-pulse">Scanning Dermis Layer...</h3>
