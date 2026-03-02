@@ -3,3 +3,8 @@ flask-cors
 python-dotenv
 pymongo
 gunicorn
+tensorflow
+Pillow
+numpy
+pandas
+scikit-learn

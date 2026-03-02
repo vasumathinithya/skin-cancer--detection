@@ -40,6 +40,33 @@ export const setStoredKey = (key) => {
 
 export const hasKey = () => !!getStoredKey();
 
+export const analyzeImageWithGemini = async (imageBase64, apiKey = getStoredKey() || "AIzaSyA666C_F1zFEf9cFyy9tW2Yt8WVFg1WXLY") => {
+    const prompt = "You are a highly experienced dermatologist. Look at this exact image from the camera/upload. First check: Is this completely obviously NOT human skin? (For example, is the image just a blurry finger covering a camera lens, a solid blank wall, darkness, or a piece of furniture?). If it is NOT skin, you MUST strictly reply with ONLY the word: NOT_SKIN. Otherwise, if it is skin, analyze it. If it is Acne, Eczema, Psoriasis, or Normal Skin, state that clearly. If it is a skin cancer, state that. ONLY reply with the exact name of the condition (e.g., 'Acne', 'Eczema', 'Melanoma').";
+
+    // Extract purely the base64 string
+    const base64Data = imageBase64.includes(',') ? imageBase64.split(',')[1] : imageBase64;
+
+    // We will use gemini-1.5-flash as it supports vision natively via standard generateContent
+    const response = await fetch(`${GEMINI_API_URL}gemini-1.5-flash:generateContent?key=${apiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            contents: [{
+                parts: [
+                    { text: prompt },
+                    { inline_data: { mime_type: "image/jpeg", data: base64Data } }
+                ]
+            }]
+        })
+    });
+
+    const data = await response.json();
+    if (data.error) throw new Error(data.error.message);
+
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "Unknown Condition";
+    return text.replace(/[^a-zA-Z\s]/g, '').trim(); // Remove Markdown or periods just in case
+};
+
 export const generateAIAnalysis = async (diseaseName, severity, confidence, apiKey = getStoredKey() || "AIzaSyA666C_F1zFEf9cFyy9tW2Yt8WVFg1WXLY") => {
     if (!apiKey) throw new Error("API Key is missing. Please add it first.");
 

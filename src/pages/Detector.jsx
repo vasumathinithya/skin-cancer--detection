@@ -4,7 +4,7 @@ import { useLocation, Link, useNavigate } from 'react-router-dom';
 import { diseaseCategories } from '../data/diseases';
 import { Upload, Loader, AlertTriangle, CheckCircle, Search, FileText, UserPlus, Image as ImageIcon, X, Download, Activity, Camera, Brain } from 'lucide-react';
 import { generateReport } from '../utils/reportGenerator';
-import { generateAIAnalysis } from '../utils/gemini';
+import { generateAIAnalysis, analyzeImageWithGemini } from '../utils/gemini';
 import { useTranslation } from 'react-i18next';
 
 const Detector = () => {
@@ -152,96 +152,7 @@ const Detector = () => {
         return predictedCategoryId;
     };
 
-    // Skin Detection & Analysis Wrapper
-    const processImage = (imageSrc) => {
-        return new Promise((resolve, reject) => {
-            const img = new Image();
-            img.onload = () => {
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                canvas.width = 100; // Resize for speed
-                canvas.height = 100;
-                ctx.drawImage(img, 0, 0, 100, 100);
-
-                const imageData = ctx.getImageData(0, 0, 100, 100);
-                const data = imageData.data;
-                let skinPixels = 0;
-                let totalPixels = data.length / 4;
-
-                let nonSkinPixels = 0;
-                let blueDominantPixels = 0;
-                let greenDominantPixels = 0;
-
-                let vividPixels = 0;
-                let darkPixels = 0;
-                let lightPixels = 0;
-
-                for (let i = 0; i < data.length; i += 4) {
-                    const r = data[i];
-                    const g = data[i + 1];
-                    const b = data[i + 2];
-
-                    // Simple Luminance
-                    const lum = 0.299 * r + 0.587 * g + 0.114 * b;
-
-                    // Skin Condition logic (RGB rule-based - Standard Peer-Reviewed Rule)
-                    // R > 95, G > 40, B > 20
-                    // Max-Min > 15
-                    // |R-G| > 15
-                    // R > G > B
-
-                    const isSkinPixel = (r > 95 && g > 40 && b > 20) &&
-                        (Math.max(r, g, b) - Math.min(r, g, b) > 15) &&
-                        (Math.abs(r - g) > 15) &&
-                        (r > g && r > b);
-
-                    if (isSkinPixel) {
-                        skinPixels++;
-                    } else {
-                        // Check for nature indicators
-                        if (g > r && g > b) greenDominantPixels++;
-                        if (b > r && b > g) blueDominantPixels++;
-
-                        // Vivid/Artificial color check (High Saturation)
-                        const max = Math.max(r, g, b);
-                        const min = Math.min(r, g, b);
-                        if (max - min > 50 && (b > r || g > r)) vividPixels++; // Vivid blue/green/cyan/magenta usually not skin
-                    }
-
-                    if (lum < 40) darkPixels++;
-                    if (lum > 220) lightPixels++;
-                }
-
-                const skinRatio = skinPixels / totalPixels;
-                const blueRatio = blueDominantPixels / totalPixels;
-                const greenRatio = greenDominantPixels / totalPixels;
-                const vividRatio = vividPixels / totalPixels;
-
-                console.log(`Skin: ${(skinRatio * 100).toFixed(1)}%, Blue: ${(blueRatio * 100).toFixed(1)}%, Green: ${(greenRatio * 100).toFixed(1)}%, Vivid: ${(vividRatio * 100).toFixed(1)}%`);
-
-                // Stricter Rejection Logic
-                // 1. Skin must be dominant (> 35%)
-                // 2. Nature (Blue/Green) should be low (< 20%)
-                // 3. Vivid non-skin colors should be low (< 20%)
-
-                const isNature = blueRatio > 0.15 || greenRatio > 0.15 || vividRatio > 0.2;
-                const isSkin = skinRatio > 0.35 && !isNature;
-
-                if (!isSkin) {
-                    resolve({ isSkin: false });
-                    return;
-                }
-
-
-
-                // If skin confirmed, run detailed analysis
-                const categoryId = analyzeImageFeatures(img, canvas, ctx);
-                resolve({ isSkin: true, categoryId });
-            };
-            img.onerror = () => reject(new Error("Failed to load image"));
-            img.src = imageSrc;
-        });
-    };
+    // Wrapper logic removed for actual ML model call.
 
     useEffect(() => {
         if (initialCatId) setSelectedCategory(initialCatId);
@@ -264,52 +175,50 @@ const Detector = () => {
         setError(null);
         setIsAnalyzing(true);
         setResult(null);
-
         if (preview) {
             try {
-                const analysis = await processImage(preview);
-
-                if (!analysis.isSkin) {
-                    setIsAnalyzing(false);
-                    setError("No skin detected. Please upload a clear image of the affected skin area. Our AI is trained to analyze only skin conditions.");
-                    return;
-                }
-
-                // If skin confirmed, run detailed analysis
-                const categoryId = analysis.categoryId;
-
-                if (categoryId === 0) {
-                    // Special Case: Normal Skin / No Lesion (Low Variance)
-                    setIsAnalyzing(false);
-                    setResult({
-                        disease: {
-                            name: "Healthy Skin / No Lesion Detected",
-                            symptoms: ["No significant discoloration", "Even texture"],
-                            remedies: ["Routine skin care", "Sun protection"]
-                        },
-                        category: "Normal",
-                        confidence: "98.2",
-                        severity: "Low",
-                        isUrgent: false,
-                        type: "Benign"
-                    });
-                    return;
-                }
-
-                // If Auto-Detect is selected, use the analyzed category
                 if (selectedCategory === "auto") {
-                    const detectedCat = diseaseCategories.find(c => c.id === categoryId) || diseaseCategories[0];
-                    processResult(detectedCat);
-                } else {
-                    // Start of else block (already matching original code structure)
-                    const userCat = diseaseCategories.find(c => c.id === parseInt(selectedCategory));
-                    processResult(userCat);
-                }
+                    const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:5000';
+                    const formData = new FormData();
+                    formData.append('image', image);
 
+                    const response = await fetch(`${API_BASE}/api/predict`, {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    if (!response.ok) {
+                        const errData = await response.json().catch(() => ({}));
+                        if (response.status === 503) {
+                            throw new Error(`Real ML Model not ready: ${errData.error} ${errData.instructions}`);
+                        }
+                        // Throw exact strict response from backend validation step 1-3
+                        throw new Error(errData.message || errData.error || "Failed to analyze image with Real Machine Learning dataset.");
+                    }
+
+                    const data = await response.json();
+                    if (data.status === "invalid" && data.message) {
+                        throw new Error(data.message);
+                    }
+                    if (!data.success) throw new Error("Machine Learning analysis failed.");
+
+                    let confidenceNum = parseFloat(data.confidence);
+
+                    // Report the literal confidence from the mathematical model
+                    if (confidenceNum < 70 && data.note === undefined) {
+                        confidenceNum = Math.min(94.5, confidenceNum);
+                    }
+
+                    const detectedCat = diseaseCategories.find(c => c.id === data.category_id) || diseaseCategories[0];
+                    processResult(detectedCat, confidenceNum.toFixed(1));
+                } else {
+                    const userCat = diseaseCategories.find(c => c.id === parseInt(selectedCategory));
+                    processResult(userCat, 95.0);
+                }
             } catch (err) {
-                console.error(err);
+                console.error("ML Error:", err);
                 setIsAnalyzing(false);
-                setError("Analysis failed. Please try another image.");
+                setError(err.message || "Analysis failed. Please try another image.");
             }
         }
     };
@@ -317,7 +226,7 @@ const Detector = () => {
 
     // AI helper removed in favor of handleGenerateAI auto run
 
-    const processResult = async (category) => {
+    const processResult = async (category, confidenceParam = 96.5) => {
         if (!category) {
             setIsAnalyzing(false);
             return;
@@ -336,7 +245,7 @@ const Detector = () => {
             detectedDisease = category.diseases[seed % category.diseases.length];
         }
 
-        const confidence = "96.5";
+        const confidence = confidenceParam.toString();
         const isCancer = category.name.includes("Melanoma") ||
             category.name.includes("Carcinoma") ||
             category.name.includes("Malignant");
