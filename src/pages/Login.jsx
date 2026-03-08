@@ -15,7 +15,7 @@ const Login = () => {
         setError('');
         setLoading(true);
         try {
-            const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:5000';
+            const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
             const res = await fetch(`${API_BASE}/api/login`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },

@@ -6,7 +6,7 @@ import {
     BarChart2, PieChart, Lock, RefreshCw
 } from 'lucide-react';
 
-const API = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:5000';
+const API = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 const ADMIN_EMAIL = 'admin@dermaai.com';
 const ADMIN_PASSWORD = 'admin123';
 
@@ -170,53 +170,14 @@ const AdminDashboard = () => {
         setLoading(true);
         setFetchError('');
         try {
-            // Prevent hanging requests using a 1500ms timeout race condition
-            const timeoutPromise = new Promise((_, reject) =>
-                setTimeout(() => reject(new Error('Backend Timeout')), 1500)
-            );
-
-            const res = await Promise.race([
-                fetch(`${API}/api/admin/stats`),
-                timeoutPromise
-            ]);
-
+            const res = await fetch(`${API}/api/admin/stats`);
             if (!res.ok) throw new Error('Failed to fetch stats');
             const data = await res.json();
             setStats(data);
         } catch (e) {
-            console.warn("Backend Unreachable, loading perfect offline presentation mock data", e);
-            // Load realistic mock data so the presentation doesn't embarrass the user
-            setStats({
-                total_users: 142,
-                total_scans: 856,
-                total_reports: 341,
-                total_appointments: 184,
-                high_risk_count: 14,
-                weekly_scans: [
-                    { day: 'Mon', scans: 45 }, { day: 'Tue', scans: 78 }, { day: 'Wed', scans: 110 },
-                    { day: 'Thu', scans: 91 }, { day: 'Fri', scans: 145 }, { day: 'Sat', scans: 231 }, { day: 'Sun', scans: 156 }
-                ],
-                detection_breakdown: [
-                    { name: 'Healthy Skin', count: 410 },
-                    { name: 'Acne & Rosacea', count: 185 },
-                    { name: 'Eczema / Dermatitis', count: 112 },
-                    { name: 'Melanocytic Nevi', count: 84 },
-                    { name: 'Benign Keratosis', count: 45 },
-                    { name: 'Basal Cell Carcinoma', count: 16 },
-                    { name: 'Melanoma', count: 4 }
-                ],
-                severity_breakdown: [
-                    { severity: 'Low', count: 651 },
-                    { severity: 'Moderate', count: 171 },
-                    { severity: 'High', count: 34 }
-                ],
-                recent_users: [
-                    { name: "Sarah J.", email: "sarah***@gmail.com", scans: 4, joined: "2026-02-28", risk: "Low" },
-                    { name: "Michael T.", email: "m.tho***@yahoo.com", scans: 12, joined: "2026-02-27", risk: "Moderate" },
-                    { name: "Anonymous", email: "guest", scans: 1, joined: "2026-03-01", risk: "High" },
-                    { name: "Priya K.", email: "priya***@outlook.com", scans: 2, joined: "2026-02-25", risk: "Low" }
-                ]
-            });
+            console.error("Failed to load stats:", e);
+            setFetchError("Could not load data from the server. Ensure backend is running.");
+            // We do NOT load mock data here anymore, per user request for real data only.
         } finally {
             setLoading(false);
         }

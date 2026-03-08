@@ -33,7 +33,7 @@ DATASET_DIR = './dataset' # <-- CHANGE THIS to your actual dataset path
 MODEL_SAVE_PATH = 'skin_cancer_model.h5'
 IMG_SIZE = (224, 224)
 BATCH_SIZE = 32
-EPOCHS = 15
+EPOCHS = 30
 
 def build_model(num_classes=7):
     """
@@ -53,14 +53,14 @@ def build_model(num_classes=7):
     # Add custom classification head
     x = base_model.output
     x = GlobalAveragePooling2D()(x)
-    x = Dense(256, activation='relu')(x)
+    x = Dense(128, activation='relu')(x)
     x = Dropout(0.5)(x)
     predictions = Dense(num_classes, activation='softmax')(x)
     
     model = Model(inputs=base_model.input, outputs=predictions)
     
     model.compile(
-        optimizer=Adam(learning_rate=0.001), 
+        optimizer=Adam(learning_rate=0.0001), 
         loss='categorical_crossentropy', 
         metrics=['accuracy']
     )
@@ -84,10 +84,8 @@ def train():
     train_datagen = ImageDataGenerator(
         rescale=1./255,
         rotation_range=30,
-        width_shift_range=0.2,
-        height_shift_range=0.2,
-        shear_range=0.2,
         zoom_range=0.2,
+        brightness_range=[0.8, 1.2],
         horizontal_flip=True,
         fill_mode='nearest'
     )
@@ -107,6 +105,18 @@ def train():
         batch_size=BATCH_SIZE,
         class_mode='categorical'
     )
+
+    # Calculate class weights for dataset balancing
+    from sklearn.utils.class_weight import compute_class_weight
+    import numpy as np
+    classes = train_generator.classes
+    class_weights = compute_class_weight(
+        class_weight='balanced',
+        classes=np.unique(classes),
+        y=classes
+    )
+    class_weight_dict = dict(enumerate(class_weights))
+    print(f"⚖️ Computed class weights for balancing: {class_weight_dict}")
 
     # Class indices output
     print(f"🏷️ Class mapping: {train_generator.class_indices}")
@@ -134,7 +144,8 @@ def train():
         epochs=EPOCHS,
         validation_data=validation_generator,
         validation_steps=validation_generator.samples // BATCH_SIZE,
-        callbacks=[checkpoint, early_stop]
+        callbacks=[checkpoint, early_stop],
+        class_weight=class_weight_dict
     )
 
     print(f"✅ Training complete! Model saved to {MODEL_SAVE_PATH}.")
