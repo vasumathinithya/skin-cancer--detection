@@ -214,14 +214,15 @@ export const generateReport = (result, imagePreview, appointmentDetails = null) 
         doc.setFillColor(229, 231, 235);
         doc.roundedRect(col2X, meterY, meterWidth, meterHeight, 1, 1, 'F');
 
-        // Progress fill
-        const fillWidth = (result.confidence / 100) * meterWidth;
+        // Progress fill (Parse float to safely remove trailing '%' if present)
+        const parsedConfidence = parseFloat(result.confidence) || 0;
+        const fillWidth = (parsedConfidence / 100) * meterWidth;
         doc.setFillColor(...colors.primary);
         doc.roundedRect(col2X, meterY, fillWidth, meterHeight, 1, 1, 'F');
 
         doc.setFontSize(9);
         doc.setTextColor(...colors.text);
-        doc.text(`${result.confidence}%`, col2X + meterWidth + 5, meterY + 3);
+        doc.text(`${parsedConfidence}%`, col2X + meterWidth + 5, meterY + 3);
 
         currentY += 75; // Move past image/diagnosis section
 

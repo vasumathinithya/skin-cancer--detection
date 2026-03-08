@@ -87,7 +87,7 @@ const Appointment = () => {
         e.preventDefault();
         setIsSubmitting(true);
 
-        const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:5000';
+        const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
         // Fire the booking request in the background (fire-and-forget) to ensure 
         // the presentation flow never hangs if the cloud backend is sleeping/blocked.
