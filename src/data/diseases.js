@@ -90,5 +90,18 @@ export const diseaseCategories = [
         isUrgent: false
       }
     ]
+  },
+  {
+    id: 8,
+    name: "Normal Skin (normal)",
+    description: "Healthy skin without visible signs of malignant lesions or threatening conditions.",
+    diseases: [
+      {
+        name: "Normal Healthy Skin",
+        symptoms: ["Consistent texture", "No irregular pigmentation", "No scaling or active lesions"],
+        remedies: ["Continue regular skin hygiene", "Use sunscreen daily", "Stay hydrated"],
+        isUrgent: false
+      }
+    ]
   }
 ];

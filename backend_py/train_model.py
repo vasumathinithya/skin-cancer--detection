@@ -16,13 +16,14 @@ from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping
 # 2. Extract and organize the images into a directory structure like this:
 #    dataset/
 #      train/
-#        nv/      (Melanocytic Nevi)
-#        mel/     (Melanoma)
-#        bkl/     (Benign Keratosis)
-#        bcc/     (Basal Cell Carcinoma)
-#        akiec/   (Actinic Keratoses)
-#        vasc/    (Vascular Lesions)
-#        df/      (Dermatofibroma)
+#        actinic_keratosis/
+#        basal_cell_carcinoma/
+#        benign_keratosis/
+#        dermatofibroma/
+#        melanocytic_nevus/
+#        melanoma/
+#        normal_skin/       <-- Put your normal healthy skin images here!
+#        vascular_lesion/
 #      val/
 #        (same folders as train for validation)
 # 3. Update the DATASET_DIR variable below to point to your extracted dataset.
@@ -80,9 +81,9 @@ def train():
         return
 
     print("📊 Loading and augmenting realistic dataset...")
-    # Data Augmentation to prevent overfitting
+    # Data Augmentation to prevent overfitting (as requested: rotation, zoom, flip)
     train_datagen = ImageDataGenerator(
-        rescale=1./255,
+        rescale=1./255, # Normalize pixel values to [0,1]
         rotation_range=30,
         zoom_range=0.2,
         brightness_range=[0.8, 1.2],
