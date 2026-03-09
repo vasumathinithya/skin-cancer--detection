@@ -61,8 +61,15 @@ def init_db():
                  (id INTEGER PRIMARY KEY AUTOINCREMENT,
                   name TEXT NOT NULL,
                   email TEXT UNIQUE NOT NULL,
+                  phone TEXT,
                   password_hash TEXT NOT NULL,
                   created_at TEXT DEFAULT CURRENT_TIMESTAMP)''')
+
+    # Safe Migration: ensure phone column exists in already-created persisting databases
+    try:
+        c.execute('ALTER TABLE users ADD COLUMN phone TEXT')
+    except sqlite3.OperationalError:
+        pass # Column already exists
 
     # Scans table — stores every AI detection result
     c.execute('''CREATE TABLE IF NOT EXISTS scans
@@ -99,19 +106,20 @@ def register():
     data = request.json
     name = data.get('name', '').strip()
     email = data.get('email', '').strip().lower()
+    phone = data.get('phone', '').strip()
     password = data.get('password', '')
 
-    if not name or not email or not password:
-        return jsonify({"error": "All fields are required"}), 400
+    if not name or not email or not phone or not password:
+        return jsonify({"error": "All fields (Name, Email, Phone, Password) are required"}), 400
 
     try:
         conn = sqlite3.connect(DB_PATH)
         c = conn.cursor()
-        c.execute("INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?)",
-                  (name, email, hash_password(password)))
+        c.execute("INSERT INTO users (name, email, phone, password_hash) VALUES (?, ?, ?, ?)",
+                  (name, email, phone, hash_password(password)))
         conn.commit()
         conn.close()
-        return jsonify({"message": "User registered successfully", "user": {"name": name, "email": email}}), 201
+        return jsonify({"message": "User registered successfully", "user": {"name": name, "email": email, "phone": phone}}), 201
     except sqlite3.IntegrityError:
         return jsonify({"error": "Email already registered"}), 409
     except Exception as e:
@@ -427,7 +435,11 @@ def admin_stats():
                 "risk": risk
             })
 
-        # Report downloads approximation (scans where severity is High = likely downloaded)
+        # Real data driven metrics instead of approximations
+        # Assuming every scan generates a report view, track them accurately
+        c.execute("SELECT COUNT(*) as count FROM scans")
+        total_reports_generated = c.fetchone()['count']
+
         c.execute("SELECT COUNT(*) as count FROM scans WHERE severity = 'High'")
         high_risk_scans = c.fetchone()['count']
 
@@ -437,7 +449,7 @@ def admin_stats():
             "total_users": total_users,
             "total_scans": total_scans,
             "total_appointments": total_appointments,
-            "total_reports": int(total_scans * 0.72),  # Approximation
+            "total_reports": total_reports_generated,
             "detection_breakdown": detection_breakdown,
             "weekly_scans": weekly_scans,
             "severity_breakdown": severity_breakdown,

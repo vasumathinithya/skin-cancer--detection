@@ -6,6 +6,7 @@ import { Mail, Lock, UserPlus, User } from 'lucide-react';
 const Register = () => {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
+    const [phone, setPhone] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [error, setError] = useState('');
@@ -25,7 +26,7 @@ const Register = () => {
             const res = await fetch(`${API_BASE}/api/register`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, email, password }),
+                body: JSON.stringify({ name, email, phone, password }),
             });
             const data = await res.json();
             if (!res.ok) {
@@ -69,6 +70,15 @@ const Register = () => {
                             <Mail size={20} className="absolute left-3 top-3.5 text-slate-500" />
                             <input type="email" required className="pl-10 w-full" placeholder="name@example.com"
                                 value={email} onChange={(e) => setEmail(e.target.value)} />
+                        </div>
+                    </div>
+
+                    <div className="form-group mb-6">
+                        <label className="text-slate-300 mb-2 block font-medium">Phone Number</label>
+                        <div className="relative">
+                            <User size={20} className="absolute left-3 top-3.5 text-slate-500" />
+                            <input type="tel" required className="pl-10 w-full" placeholder="123-456-7890"
+                                value={phone} onChange={(e) => setPhone(e.target.value)} />
                         </div>
                     </div>
 
