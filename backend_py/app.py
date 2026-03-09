@@ -204,8 +204,26 @@ def predict_skin_disease():
         img_hash = hashlib.md5(img_bytes).hexdigest()
         
         # Convert codes
-        classes = ["akiec", "bcc", "bkl", "df", "mel", "nv", "vasc"]
-        code_to_id = {"akiec": 5, "bcc": 4, "bkl": 3, "df": 7, "mel": 2, "nv": 1, "vasc": 6}
+        classes = [
+            "actinic_keratosis", 
+            "basal_cell_carcinoma", 
+            "benign_keratosis", 
+            "dermatofibroma", 
+            "melanocytic_nevus", 
+            "melanoma", 
+            "normal_skin",
+            "vascular_lesion"
+        ]
+        code_to_id = { 
+            "actinic_keratosis": 5, 
+            "basal_cell_carcinoma": 4, 
+            "benign_keratosis": 3, 
+            "dermatofibroma": 7, 
+            "melanocytic_nevus": 1, 
+            "melanoma": 2, 
+            "normal_skin": 8, 
+            "vascular_lesion": 6 
+        }
 
         if img_hash in DATASET_HASHES:
             exact_code = DATASET_HASHES[img_hash]
@@ -307,16 +325,36 @@ def predict_skin_disease():
         img_array = np.expand_dims(img_array, axis=0) / 255.0
 
         raw_predictions = ml_model.predict(img_array)[0]
-        class_counts = np.array([327, 514, 1099, 115, 1113, 6705, 142])
-        adjusted_preds = raw_predictions / np.sqrt(class_counts)
-        adjusted_preds /= np.sum(adjusted_preds)
         
-        class_idx = np.argmax(adjusted_preds)
-        confidence = float(adjusted_preds[class_idx])
+        # We no longer manually offset class_counts here, as the new training loop 
+        # utilizes 'class_weight=balanced' to handle the imbalances natively.
+        
+        class_idx = np.argmax(raw_predictions)
+        confidence = float(raw_predictions[class_idx])
 
-        classes = ["akiec", "bcc", "bkl", "df", "mel", "nv", "vasc"]
+        classes = [
+            "actinic_keratosis", 
+            "basal_cell_carcinoma", 
+            "benign_keratosis", 
+            "dermatofibroma", 
+            "melanocytic_nevus", 
+            "melanoma", 
+            "normal_skin",
+            "vascular_lesion"
+        ]
+        
         predicted_class_code = classes[class_idx]
-        code_to_id = { "akiec": 5, "bcc": 4, "bkl": 3, "df": 7, "mel": 2, "nv": 1, "vasc": 6 }
+        code_to_id = { 
+            "actinic_keratosis": 5, 
+            "basal_cell_carcinoma": 4, 
+            "benign_keratosis": 3, 
+            "dermatofibroma": 7, 
+            "melanocytic_nevus": 1, 
+            "melanoma": 2, 
+            "normal_skin": 8, 
+            "vascular_lesion": 6 
+        }
+        
         category_id = code_to_id.get(predicted_class_code, 1)
         display_confidence_percentage = f"{round(confidence * 100, 1)}%"
         

@@ -28,8 +28,19 @@ def organize_dataset():
     train_dir = os.path.join(base_out_dir, 'train')
     val_dir = os.path.join(base_out_dir, 'val')
     
-    # Create output directories if they don't exist
-    classes = ['nv', 'mel', 'bkl', 'bcc', 'akiec', 'vasc', 'df']
+    # The new target folder structure with full descriptive names
+    class_mapping = {
+        'nv': 'melanocytic_nevus',
+        'mel': 'melanoma',
+        'bkl': 'benign_keratosis',
+        'bcc': 'basal_cell_carcinoma',
+        'akiec': 'actinic_keratosis',
+        'vasc': 'vascular_lesion',
+        'df': 'dermatofibroma'
+    }
+    
+    # Create output directories including the new 'normal_skin' class
+    classes = list(class_mapping.values()) + ['normal_skin']
     for cls in classes:
         os.makedirs(os.path.join(train_dir, cls), exist_ok=True)
         os.makedirs(os.path.join(val_dir, cls), exist_ok=True)
@@ -60,7 +71,8 @@ def organize_dataset():
                     break
             
             if src_path:
-                dst_path = os.path.join(base_out_dir, target_folder_name, img_class, filename)
+                full_class_name = class_mapping[img_class]
+                dst_path = os.path.join(base_out_dir, target_folder_name, full_class_name, filename)
                 shutil.copy2(src_path, dst_path)
                 copied += 1
             else:
