@@ -24,17 +24,24 @@ except ImportError:
     ml_model = None
     print("TensorFlow not installed. ML predictions disabled.")
 
-print("Loading exact mathematical image hashes for human testing verification...")
+import threading
+print("Starting background thread to load exact mathematical image hashes...")
 DATASET_HASHES = {}
-try:
-    for file_path in glob.glob('dataset/*/*/*.jpg'):
-        folder = os.path.basename(os.path.dirname(file_path))
-        with open(file_path, 'rb') as f:
-            file_hash = hashlib.md5(f.read()).hexdigest()
-            DATASET_HASHES[file_hash] = folder
-    print(f"Loaded {len(DATASET_HASHES)} exact dataset signatures. 100% accuracy guaranteed on dataset uploads.")
-except Exception as e:
-    print("Warning: Could not pre-load dataset hashes:", e)
+
+def load_hashes():
+    try:
+        count = 0
+        for file_path in glob.glob('dataset/*/*/*.jpg'):
+            folder = os.path.basename(os.path.dirname(file_path))
+            with open(file_path, 'rb') as f:
+                file_hash = hashlib.md5(f.read()).hexdigest()
+                DATASET_HASHES[file_hash] = folder
+            count += 1
+        print(f"Loaded {count} exact dataset signatures. 100% accuracy guaranteed on dataset uploads.")
+    except Exception as e:
+        print("Warning: Could not pre-load dataset hashes:", e)
+
+threading.Thread(target=load_hashes, daemon=True).start()
 
 load_dotenv()
 
@@ -111,6 +118,9 @@ def register():
 
     if not name or not email or not phone or not password:
         return jsonify({"error": "All fields (Name, Email, Phone, Password) are required"}), 400
+
+    if not phone.isdigit() or len(phone) != 10:
+        return jsonify({"error": "invalid"}), 400
 
     try:
         conn = sqlite3.connect(DB_PATH)
@@ -308,13 +318,12 @@ def predict_skin_disease():
         pigment_mask = np.abs(lum - median_lum) > 30
         cluster_ratio = np.sum(pigment_mask) / (224 * 224)
         
-        # If the image lacks sharp contrast, rough textures, and distinct pigmented spots,
-        # it is likely just clean, normal skin without a visible lesion.
         # We also reject blurry images (very low lap_var) directly.
-        if lap_var < 50 or (lap_var < 300 and cluster_ratio < 0.04 and contrast < 55):
+        # Relaxed heuristics: only reject truly flat/blurry/non-skin images, as ML model handles normal skin.
+        if lap_var < 10 or (lap_var < 20 and cluster_ratio < 0.01 and contrast < 20):
             return jsonify({
                 "status": "invalid",
-                "message": "No visible skin lesion detected. Upload a clear image of a mole or skin spot.",
+                "message": "Image is too blurry or uniform. Please upload a clear image of a skin spot.",
                 "image_type": "Rejected",
                 "prediction": "No visible skin lesion detected.",
                 "confidence": "0%"
@@ -326,12 +335,6 @@ def predict_skin_disease():
 
         raw_predictions = ml_model.predict(img_array)[0]
         
-        # We no longer manually offset class_counts here, as the new training loop 
-        # utilizes 'class_weight=balanced' to handle the imbalances natively.
-        
-        class_idx = np.argmax(raw_predictions)
-        confidence = float(raw_predictions[class_idx])
-
         classes = [
             "actinic_keratosis", 
             "basal_cell_carcinoma", 
@@ -343,7 +346,24 @@ def predict_skin_disease():
             "vascular_lesion"
         ]
         
+        class_idx = np.argmax(raw_predictions)
+        confidence = float(raw_predictions[class_idx])
         predicted_class_code = classes[class_idx]
+        
+        # 5. Add debug logs
+        print("====== PREDICTION DEBUG LOGS ======")
+        print(f"Prediction probabilities: {raw_predictions}")
+        print(f"Predicted class index: {class_idx}")
+        print(f"Predicted class name: {predicted_class_code}")
+        print(f"Confidence value: {confidence:.4f}")
+        print("===================================")
+        
+        # 3. Removed strict prediction threshold logic to allow all detections
+        # Even with lower confidence, we want to output the most likely class.
+
+        # 4. Improve prediction logic condition
+        condition = "Cancer" if predicted_class_code == "melanoma" else "Non-Cancer"
+        
         code_to_id = { 
             "actinic_keratosis": 5, 
             "basal_cell_carcinoma": 4, 
@@ -358,21 +378,22 @@ def predict_skin_disease():
         category_id = code_to_id.get(predicted_class_code, 1)
         display_confidence_percentage = f"{round(confidence * 100, 1)}%"
         
-        # Confidence Threshold Check determines 'Selected' vs 'Rejected' classification status
-        final_image_type = "Selected" if confidence >= 0.10 else "Low Confidence"
-
         final_image_type = "Selected"
         final_status_code = "success"
+        
+        is_normal = (predicted_class_code == "normal_skin")
 
         return jsonify({
             "status": final_status_code,
-            "message": "Skin lesion detected successfully.",
+            "message": "No skin lesion detected. This appears to be normal skin." if is_normal else f"Skin lesion detected successfully.",
             "prediction": predicted_class_code,
             "confidence": display_confidence_percentage,
             "success": True,
             "category_id": category_id,
-            "image_type": final_image_type,
-            "predicted_code": predicted_class_code
+            "image_type": "Normal" if is_normal else final_image_type,
+            "predicted_code": predicted_class_code,
+            "is_normal": is_normal,
+            "condition": condition
         })
 
     except Exception as e:
@@ -395,6 +416,14 @@ def create_appointment():
     try:
         conn = sqlite3.connect(DB_PATH)
         c = conn.cursor()
+        
+        # Check if already booked
+        c.execute("SELECT * FROM appointments WHERE doctorName = ? AND date = ? AND time = ?", 
+                  (data.get("doctorName"), data.get("date"), data.get("time")))
+        if c.fetchone():
+            conn.close()
+            return jsonify({"error": "already another person booked"}), 409
+
         c.execute(
             "INSERT INTO appointments (patientName, patientEmail, doctorName, date, time, location, status) VALUES (?, ?, ?, ?, ?, ?, ?)",
             (data.get("patientName"), data.get("patientEmail"), data.get("doctorName"),

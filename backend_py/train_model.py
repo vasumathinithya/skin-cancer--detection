@@ -41,7 +41,7 @@ def build_model(num_classes=7):
     Builds a robust CNN using MobileNetV2 pre-trained on ImageNet
     for transfer learning on the skin cancer dataset.
     """
-    print("🚀 Building the model architecture...")
+    print("[INFO] Building the model architecture...")
     base_model = MobileNetV2(
         weights='imagenet', 
         include_top=False, 
@@ -69,7 +69,7 @@ def build_model(num_classes=7):
 
 def train():
     if not os.path.exists(DATASET_DIR):
-        print(f"❌ ERROR: Dataset directory '{DATASET_DIR}' not found.")
+        print(f"[ERROR] Dataset directory '{DATASET_DIR}' not found.")
         print("Please download the HAM10000 dataset from Kaggle and organize it into train/val folders as described in the comments.")
         return
 
@@ -77,10 +77,10 @@ def train():
     val_dir = os.path.join(DATASET_DIR, 'val')
 
     if not os.path.exists(train_dir) or not os.path.exists(val_dir):
-        print("❌ ERROR: Ensure you have both 'train' and 'val' folders inside your dataset directory.")
+        print("[ERROR] Ensure you have both 'train' and 'val' folders inside your dataset directory.")
         return
 
-    print("📊 Loading and augmenting realistic dataset...")
+    print("[INFO] Loading and augmenting realistic dataset...")
     # Data Augmentation to prevent overfitting (as requested: rotation, zoom, flip)
     train_datagen = ImageDataGenerator(
         rescale=1./255, # Normalize pixel values to [0,1]
@@ -117,10 +117,10 @@ def train():
         y=classes
     )
     class_weight_dict = dict(enumerate(class_weights))
-    print(f"⚖️ Computed class weights for balancing: {class_weight_dict}")
+    print(f"[INFO] Computed class weights for balancing: {class_weight_dict}")
 
     # Class indices output
-    print(f"🏷️ Class mapping: {train_generator.class_indices}")
+    print(f"[INFO] Class mapping: {train_generator.class_indices}")
 
     model = build_model(num_classes=train_generator.num_classes)
     
@@ -138,7 +138,7 @@ def train():
         restore_best_weights=True
     )
 
-    print("🚂 Starting training process on REAL dataset...")
+    print("[INFO] Starting training process on REAL dataset...")
     history = model.fit(
         train_generator,
         steps_per_epoch=train_generator.samples // BATCH_SIZE,
@@ -149,7 +149,7 @@ def train():
         class_weight=class_weight_dict
     )
 
-    print(f"✅ Training complete! Model saved to {MODEL_SAVE_PATH}.")
+    print(f"[SUCCESS] Training complete! Model saved to {MODEL_SAVE_PATH}.")
 
             
 if __name__ == '__main__':
