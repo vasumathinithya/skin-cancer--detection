@@ -34,3 +34,5 @@ backend_py/dataset/
 __pycache__/*
 .venv/*
 venv/*
+
+server_py/.env
