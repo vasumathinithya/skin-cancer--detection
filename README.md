@@ -90,3 +90,15 @@ Research evaluation should use appropriately authorized data and follow applicab
 
 Performance may vary across image quality, acquisition conditions, populations, and disease categories. The recovered evaluation artifacts demonstrate reproducibility of the available model and evaluation pipeline; they do not establish clinical efficacy, diagnostic accuracy, or readiness for clinical deployment.
 
+## Literature and External Claims
+
+No external literature performance result is used as the performance result of this project.
+
+The recovered model evaluation reported in `evaluation/evaluation_metrics.json` is specific to the recovered model, evaluation manifest, and HAM10000 lesion-level test split documented in this repository. It should not be compared directly with accuracy values reported by other studies unless the datasets, reference standards, preprocessing, class definitions, and evaluation protocols are comparable.
+
+External claims about clinical accuracy, disease prevalence, healthcare access, or clinical effectiveness are outside the scope of the recovered evidence and are not presented as findings of this project.
+
+Any future literature review should cite the original peer-reviewed or authoritative source and clearly distinguish:
+- published results from external studies;
+- results reproduced from external studies; and
+- measurements obtained from this project.
