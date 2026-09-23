@@ -130,3 +130,16 @@ The current recovered implementation does contain a `/api/predict` backend path 
 The recovered model evaluation artifacts under `evaluation/` are separate from the historical prototype-user evaluation and must not be used as evidence for the participant engagement, task-completion, or prototype error-rate claims.
 
 For institutional verification, the original prototype evaluation records and the referenced historical commit should be obtained from the authoritative project evidence source. If those records cannot be recovered, the historical prototype metrics should remain unverified rather than being reconstructed or estimated.
+
+
+## Participant and Methods Evidence
+
+The recovered repository does not contain the participant-level records required to independently verify the historical prototype evaluation methodology or participant count.
+
+In particular, no de-identified participant roster, eligibility criteria, survey or interview instruments, consent records, raw response export, participant-level task records, or analysis sheet was recovered.
+
+The historical evaluation description referenced a six-user evaluation using surveys/forms and structured interviews, but the recovered repository does not contain sufficient underlying records to independently verify the participant selection, consent basis, interview/survey questions, responses, or derived results.
+
+Therefore, the historical participant-methods evidence is treated as unverified. No participant identities, responses, consent status, or methodological details have been inferred or reconstructed.
+
+For institutional verification, the original evaluation protocol and de-identified participant evidence should be obtained from the authoritative project evidence source. Any future reproduction should document participant eligibility, recruitment, consent/ethics basis, instruments, anonymized participant identifiers, raw responses, task definitions, and analysis procedures.
