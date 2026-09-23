@@ -1,0 +1,27 @@
+﻿{
+  "evaluation": {
+    "dataset": "HAM10000",
+    "split": "lesion-level stratified",
+    "random_state": 42,
+    "test_images": 1995,
+    "test_lesions": 1494
+  },
+  "artifacts": {
+    "model": {
+      "path": "backend_py/skin_cancer_model.h5",
+      "sha256": "E5FB228DB369E8403EB8283FA844F7B8B4774C74C6DFD0C88EA495476660B462"
+    },
+    "test_manifest": {
+      "path": "evaluation/ham10000_test_manifest.csv",
+      "sha256": "598380FC0074CAA1B73D083BD03B774C68CFF5EA172BB179A5EDC7362AE6BC3A"
+    },
+    "case_predictions": {
+      "path": "evaluation/case_predictions.csv",
+      "sha256": "00AD4742790277F43A97536D30218B28B86E671DC8BFC0F47DCEE71A9622FCBE"
+    },
+    "metrics": {
+      "path": "evaluation/evaluation_metrics.json",
+      "sha256": "56DC15B99B4C3653128E0A21D318EC7354F1DC71876DDC3BC474808705AC2A42"
+    }
+  }
+}

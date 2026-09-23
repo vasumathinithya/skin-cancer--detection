@@ -1,0 +1,22 @@
+﻿{
+  "dataset": "HAM10000",
+  "dataset_images": 10015,
+  "unique_lesions": 7470,
+  "test_images": 1995,
+  "test_lesions": 1494,
+  "split_method": "lesion-level stratified split",
+  "random_state": 42,
+  "model": "backend_py/skin_cancer_model.h5",
+  "model_output_classes": 8,
+  "evaluated_classes": 7,
+  "excluded_model_class": "normal_skin",
+  "label_mapping": {
+    "akiec": "actinic_keratosis",
+    "bcc": "basal_cell_carcinoma",
+    "bkl": "benign_keratosis",
+    "df": "dermatofibroma",
+    "mel": "melanoma",
+    "nv": "melanocytic_nevus",
+    "vasc": "vascular_lesion"
+  }
+}

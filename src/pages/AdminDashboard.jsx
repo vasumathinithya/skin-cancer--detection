@@ -7,8 +7,7 @@ import {
 } from 'lucide-react';
 
 const API = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
-const ADMIN_EMAIL = 'admin@dermaai.com';
-const ADMIN_PASSWORD = 'admin123';
+
 
 const COLORS = [
     '#ef4444', '#f97316', '#eab308', '#22c55e',
@@ -112,13 +111,39 @@ const AdminLogin = ({ onLogin }) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
+
+        setError('');
+        setLoading(true);
+
+        try {
+            const res = await fetch(`${API}/api/admin/login`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'include',
+                body: JSON.stringify({
+                    email,
+                    password
+                })
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                throw new Error(data.error || 'Invalid admin credentials.');
+            }
+
             onLogin();
-        } else {
-            setError('Invalid admin credentials. Try admin@dermaai.com / admin123');
+        } catch (err) {
+            console.error('Admin login failed:', err);
+            setError(err.message || 'Unable to connect to the server.');
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -129,30 +154,72 @@ const AdminLogin = ({ onLogin }) => {
                     <div className="w-16 h-16 rounded-full bg-indigo-100 flex items-center justify-center mx-auto mb-4">
                         <Shield size={32} className="text-indigo-600" />
                     </div>
-                    <h1 className="text-3xl font-extrabold text-slate-800">Admin Portal</h1>
-                    <p className="text-slate-400 mt-1 text-sm">Restricted access — administrators only</p>
+
+                    <h1 className="text-3xl font-extrabold text-slate-800">
+                        Admin Portal
+                    </h1>
+
+                    <p className="text-slate-400 mt-1 text-sm">
+                        Restricted access — administrators only
+                    </p>
                 </div>
+
                 <form onSubmit={handleSubmit} className="flex flex-col gap-5">
                     <div>
-                        <label className="text-sm text-slate-600 font-semibold mb-1 block">Admin Email</label>
-                        <input type="email" required className="w-full" placeholder="admin@dermaai.com"
-                            value={email} onChange={e => setEmail(e.target.value)} />
+                        <label className="text-sm text-slate-600 font-semibold mb-1 block">
+                            Admin Email
+                        </label>
+
+                        <input
+                            type="email"
+                            required
+                            className="w-full"
+                            placeholder="Admin email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            disabled={loading}
+                        />
                     </div>
+
                     <div>
-                        <label className="text-sm text-slate-600 font-semibold mb-1 block">Password</label>
-                        <input type="password" required className="w-full" placeholder="••••••••"
-                            value={password} onChange={e => setPassword(e.target.value)} />
+                        <label className="text-sm text-slate-600 font-semibold mb-1 block">
+                            Password
+                        </label>
+
+                        <input
+                            type="password"
+                            required
+                            className="w-full"
+                            placeholder="Enter admin password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            disabled={loading}
+                        />
                     </div>
+
                     {error && (
                         <div className="bg-red-50 border border-red-200 text-red-600 text-sm px-4 py-3 rounded-xl flex items-center gap-2">
-                            <AlertTriangle size={16} /> {error}
+                            <AlertTriangle size={16} />
+                            {error}
                         </div>
                     )}
-                    <button type="submit" className="btn btn-primary py-3 text-base mt-2 shadow-lg shadow-indigo-300/40">
-                        <Lock size={16} className="inline mr-2" /> Enter Admin Dashboard
+
+                    <button
+                        type="submit"
+                        disabled={loading}
+                        className="btn btn-primary py-3 text-base mt-2 shadow-lg shadow-indigo-300/40 disabled:opacity-60"
+                    >
+                        <Lock size={16} className="inline mr-2" />
+
+                        {loading
+                            ? 'Authenticating...'
+                            : 'Enter Admin Dashboard'}
                     </button>
                 </form>
-                <p className="text-center text-xs text-slate-400 mt-6">Demo: admin@dermaai.com / admin123</p>
+
+                <p className="text-center text-xs text-slate-400 mt-6">
+                    Authorized administrators only
+                </p>
             </div>
         </div>
     );
@@ -170,7 +237,9 @@ const AdminDashboard = () => {
         setLoading(true);
         setFetchError('');
         try {
-            const res = await fetch(`${API}/api/admin/stats`);
+            const res = await fetch(`${API}/api/admin/stats`, {
+                credentials: 'include'
+            });
             if (!res.ok) throw new Error('Failed to fetch stats');
             const data = await res.json();
             setStats(data);
@@ -206,7 +275,20 @@ const AdminDashboard = () => {
                         className="flex items-center gap-2 text-sm font-semibold text-indigo-600 border border-indigo-200 hover:bg-indigo-50 px-4 py-2 rounded-xl transition-colors">
                         <RefreshCw size={15} className={loading ? 'animate-spin' : ''} /> Refresh
                     </button>
-                    <button onClick={() => { setIsAdmin(false); navigate('/'); }}
+                    <button
+                        onClick={async () => {
+                            try {
+                                await fetch(`${API}/api/admin/logout`, {
+                                    method: 'POST',
+                                    credentials: 'include'
+                                });
+                            } catch (err) {
+                                console.error('Admin logout failed:', err);
+                            } finally {
+                                setIsAdmin(false);
+                                navigate('/');
+                            }
+                        }}
                         className="text-sm font-semibold text-red-500 hover:text-red-600 border border-red-200 hover:bg-red-50 px-4 py-2 rounded-xl transition-colors">
                         Exit Admin
                     </button>
