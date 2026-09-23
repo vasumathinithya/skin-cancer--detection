@@ -118,3 +118,15 @@ The recovered repository does not contain the original PoC workbook identified i
 Therefore, the SHA-256 hash and cell-level provenance of the original PoC workbook cannot be independently verified from the recovered repository. No replacement workbook, hash, or source record has been fabricated.
 
 For institutional verification, the original PoC workbook should be obtained from the authoritative project registry or project-management records and its file hash and relevant project-record location should then be recorded in the project evidence register.
+
+## Prototype Evaluation Evidence
+
+The recovered repository does not contain the participant-level evidence required to independently verify the historical prototype evaluation claims of 95% engagement, task completion within 2 minutes, or 4.2% error. No participant roster, anonymized task records, survey/interview instruments, raw responses, timestamps, or calculation sheets for those claims were recovered.
+
+The historical prototype commit referenced in the audit (`a3907bcb31706eaba818a184ad85a81763752548`) is not present in the recovered Git history and therefore cannot be independently inspected.
+
+The current recovered implementation does contain a `/api/predict` backend path with TensorFlow model inference logic. It also contains mock/fallback AI response code in frontend utilities. Therefore, historical prototype prediction behavior is not asserted beyond what can be verified from the recovered current code.
+
+The recovered model evaluation artifacts under `evaluation/` are separate from the historical prototype-user evaluation and must not be used as evidence for the participant engagement, task-completion, or prototype error-rate claims.
+
+For institutional verification, the original prototype evaluation records and the referenced historical commit should be obtained from the authoritative project evidence source. If those records cannot be recovered, the historical prototype metrics should remain unverified rather than being reconstructed or estimated.
