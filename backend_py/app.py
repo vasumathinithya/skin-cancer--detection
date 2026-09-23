@@ -82,10 +82,12 @@ CORS(
 # ============================================================
 
 # Use /tmp for SQLite on cloud hosts such as Render
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
 DB_PATH = (
     os.path.join('/tmp', 'skin_cancer.db')
     if os.environ.get('RENDER')
-    else 'skin_cancer.db'
+    else os.path.join(BASE_DIR, 'skin_cancer.db')
 )
 
 
@@ -136,6 +138,20 @@ def init_db():
     except sqlite3.OperationalError:
         pass
 
+    # --------------------------------------------------------
+    # Safe migration:
+    # Add password_reset_required column if old database
+    # does not have it
+    # --------------------------------------------------------
+
+    try:
+        c.execute('''
+            ALTER TABLE users
+            ADD COLUMN password_reset_required INTEGER NOT NULL DEFAULT 0
+        ''')
+    except sqlite3.OperationalError as e:
+        if 'duplicate column name' not in str(e).lower():
+            raise
     # --------------------------------------------------------
     # Scans table
     # --------------------------------------------------------
@@ -972,6 +988,63 @@ def admin_required(view_function):
         return view_function(*args, **kwargs)
 
     return wrapped_view
+
+@app.route('/api/admin/reset-user-password', methods=['POST'])
+@admin_required
+def admin_reset_user_password():
+    data = request.get_json(silent=True) or {}
+
+    email = data.get('email', '').strip().lower()
+    new_password = data.get('new_password', '')
+
+    if not email or not new_password:
+        return jsonify({
+            "success": False,
+            "error": "Email and new password are required."
+        }), 400
+
+    if len(new_password) < 8:
+        return jsonify({
+            "success": False,
+            "error": "New password must be at least 8 characters."
+        }), 400
+
+    try:
+        new_hash = hash_password(new_password)
+
+        conn = sqlite3.connect(DB_PATH)
+        c = conn.cursor()
+
+        c.execute(
+            """
+            UPDATE users
+            SET password_hash = ?,
+                password_reset_required = 0
+            WHERE email = ?
+            """,
+            (new_hash, email)
+        )
+
+        if c.rowcount == 0:
+            conn.close()
+            return jsonify({
+                "success": False,
+                "error": "User not found."
+            }), 404
+
+        conn.commit()
+        conn.close()
+
+        return jsonify({
+            "success": True,
+            "message": "User password reset successfully."
+        }), 200
+
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
 
 @app.route('/api/admin/stats', methods=['GET'])
 @admin_required
