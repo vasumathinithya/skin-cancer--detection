@@ -110,3 +110,11 @@ The recovered repository does not contain the authoritative project roster, fina
 Therefore, authorship and identity reconciliation for the project cannot be independently verified from the recovered repository alone. No team-member identity, register number, or email information has been inferred or altered without authoritative supporting evidence.
 
 For final institutional verification, the authoritative project roster and final submission records should be obtained from the appropriate project, department, mentor, or registrar records.
+
+## Project Provenance Evidence
+
+The recovered repository does not contain the original PoC workbook identified in the audit as the canonical project record. In particular, the workbook containing the referenced `Sheet1!A126:T126` project record is not available in the recovered project files.
+
+Therefore, the SHA-256 hash and cell-level provenance of the original PoC workbook cannot be independently verified from the recovered repository. No replacement workbook, hash, or source record has been fabricated.
+
+For institutional verification, the original PoC workbook should be obtained from the authoritative project registry or project-management records and its file hash and relevant project-record location should then be recorded in the project evidence register.
