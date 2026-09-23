@@ -102,3 +102,11 @@ Any future literature review should cite the original peer-reviewed or authorita
 - published results from external studies;
 - results reproduced from external studies; and
 - measurements obtained from this project.
+
+## Project Identity and Authorship Evidence
+
+The recovered repository does not contain the authoritative project roster, final project sheet, or mentor/registrar confirmation required to independently reconcile team-member names, register numbers, and email aliases.
+
+Therefore, authorship and identity reconciliation for the project cannot be independently verified from the recovered repository alone. No team-member identity, register number, or email information has been inferred or altered without authoritative supporting evidence.
+
+For final institutional verification, the authoritative project roster and final submission records should be obtained from the appropriate project, department, mentor, or registrar records.
