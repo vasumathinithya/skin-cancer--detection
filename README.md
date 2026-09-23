@@ -143,3 +143,17 @@ The historical evaluation description referenced a six-user evaluation using sur
 Therefore, the historical participant-methods evidence is treated as unverified. No participant identities, responses, consent status, or methodological details have been inferred or reconstructed.
 
 For institutional verification, the original evaluation protocol and de-identified participant evidence should be obtained from the authoritative project evidence source. Any future reproduction should document participant eligibility, recruitment, consent/ethics basis, instruments, anonymized participant identifiers, raw responses, task definitions, and analysis procedures.
+
+## Model Performance Evidence
+
+The recovered repository contains a reproducible evaluation package for the recovered model using HAM10000. The evaluation covers 10,015 dataset images and 7,470 unique lesions, with a lesion-level stratified test split containing 1,995 images from 1,494 lesions using random state 42.
+
+The recovered evaluation reports 17.5939849624% accuracy across seven HAM10000 diagnostic classes. The model produces eight output classes; `normal_skin` is not a HAM10000 ground-truth class and was therefore excluded from the seven-class accuracy calculation. The evaluation also records per-class precision, recall, F1 scores, supports, a confusion matrix, and 1,995 case-level predictions.
+
+The evaluation artifacts are versioned through recorded SHA-256 hashes for the model, test manifest, case predictions, and metrics file. The evaluation configuration records the dataset, class mapping, split method, random state, test-set size, and model output structure.
+
+The historical 72% accuracy claim cannot be independently reproduced from the recovered project artifacts. The original training dataset/version, training split and grouping procedure, training configuration, preprocessing history, training run, and original case-level predictions required to establish that result are not available in the recovered repository.
+
+Accordingly, the historical 72% result is treated as unverified and is not presented as the recovered model's validated performance. The 17.59% result is specifically the result of the documented recovery evaluation and should not be represented as the original training result.
+
+Any future model-performance claim should use a frozen dataset and patient/lesion-independent evaluation protocol and retain the dataset/version, split manifest, model hash, code commit, preprocessing configuration, random seeds, case-level predictions, confusion matrix, and per-class metrics. Any claimed improvement from class balancing should be supported by directly comparable pre- and post-balancing evaluations using the same locked protocol; otherwise the improvement claim should be removed.
