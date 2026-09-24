@@ -157,3 +157,29 @@ The historical 72% accuracy claim cannot be independently reproduced from the re
 Accordingly, the historical 72% result is treated as unverified and is not presented as the recovered model's validated performance. The 17.59% result is specifically the result of the documented recovery evaluation and should not be represented as the original training result.
 
 Any future model-performance claim should use a frozen dataset and patient/lesion-independent evaluation protocol and retain the dataset/version, split manifest, model hash, code commit, preprocessing configuration, random seeds, case-level predictions, confusion matrix, and per-class metrics. Any claimed improvement from class balancing should be supported by directly comparable pre- and post-balancing evaluations using the same locked protocol; otherwise the improvement claim should be removed.
+
+## A06 — Prediction Endpoint Latency Evidence
+
+The recovered project includes a documented local endpoint latency measurement for `POST /api/predict`. The test used HAM10000 image `ISIC_0024306.jpg` and 10 consecutive requests to the local Flask development server at `127.0.0.1:5000`.
+
+The measurement boundary covers the HTTP request, image upload/request handling, image validation and preprocessing, model inference, and response generation. All 10 requests returned HTTP 200.
+
+| Metric | Result |
+|---|---:|
+| Runs | 10 |
+| Successful requests | 10/10 |
+| Mean | ~0.184 s |
+| Median (P50) | ~0.172 s |
+| P95 | ~0.291 s |
+| Minimum | 0.099 s |
+| Maximum | 0.318 s |
+| CPU | 12th Gen Intel(R) Core(TM) i5-12450H |
+| Python | 3.10.11 |
+| TensorFlow | 2.15.0 |
+
+The raw measurements are preserved in `evaluation/a06_endpoint_timings.csv`, with the protocol and interpretation documented in `evaluation/a06_latency_evidence.md`.
+
+These measurements represent the local development environment only. They do not measure production infrastructure or internet/network latency. The historical 7-second prediction-time statement is therefore not treated as independently verified because its original measurement protocol, repetitions, environment, and raw timings were not preserved.
+
+The measured latency should be reported together with its measurement boundary and environment rather than as a general production performance claim.
+
